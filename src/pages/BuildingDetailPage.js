@@ -19,7 +19,7 @@ import ImageGallery from '../components/ImageGallery';
 import { ErrorView, LoadingView } from '../components/StateView';
 import { useApartmentsByBuilding, useBuilding } from '../services/api/hooks';
 
-const { Paragraph, Text, Title } = Typography;
+const { Text, Title } = Typography;
 
 function BuildingDetailPage() {
   const { buildingId } = useParams();

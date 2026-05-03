@@ -14,13 +14,12 @@ import {
   Descriptions,
   Divider,
   Empty,
-  InputNumber,
   Row,
   Space,
   Statistic,
   Typography
 } from 'antd';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ApartmentCard from '../components/ApartmentCard';
 import ContactButtons from '../components/ContactButtons';
@@ -48,8 +47,8 @@ function ApartmentDetailPage() {
     apartmentState.data?.buildingId
   );
   const allApartmentsState = useApartments();
-  const [estimatedKwh, setEstimatedKwh] = useState(120);
-  const [occupants, setOccupants] = useState(2);
+  const estimatedKwh = 120;
+  const occupants = 2;
 
   const apartment = apartmentState.data;
 
