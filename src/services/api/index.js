@@ -143,7 +143,11 @@ function mapResidentRoom(item) {
 
 async function getResidentBuildingsForClient() {
   const result = await getResidentBuildings();
-  return (result.items || []).map(mapResidentBuilding);
+  const listItems = result.items || [];
+  const detailItems = await Promise.all(
+    listItems.map((item) => getResidentApartmentById(item.id))
+  );
+  return detailItems.map(mapResidentBuilding);
 }
 
 async function getResidentBuildingByIdForClient(id) {

@@ -36,6 +36,7 @@
   background: transparent;
   border-bottom: 0;
   font-weight: 600;
+  min-width: 380px;
 }
 
 .app-nav .ant-menu-item,
