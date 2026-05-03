@@ -2,13 +2,11 @@ import {
   BankOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
-  LeftOutlined,
   ThunderboltOutlined,
   UserOutlined
 } from '@ant-design/icons';
 import {
   Alert,
-  Button,
   Card,
   Col,
   Descriptions,

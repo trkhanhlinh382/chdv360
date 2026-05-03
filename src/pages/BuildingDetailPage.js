@@ -1,4 +1,3 @@
-import { LeftOutlined } from '@ant-design/icons';
 import {
   Button,
   Card,
@@ -12,7 +11,7 @@ import {
   Typography
 } from 'antd';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ApartmentCard from '../components/ApartmentCard';
 import ImageGallery from '../components/ImageGallery';
 import { ErrorView, LoadingView } from '../components/StateView';

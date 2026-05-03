@@ -1,5 +1,4 @@
 import {
-  EnvironmentOutlined,
   MessageOutlined,
   PhoneOutlined,
   WechatOutlined
