@@ -119,6 +119,30 @@
 
 .app-header-spacer {
   min-height: 1px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.app-mobile-menu-trigger {
+  display: none;
+  color: #8d7748;
+  font-size: 20px;
+  width: 42px;
+  height: 42px;
+}
+
+.app-mobile-menu-trigger:hover,
+.app-mobile-menu-trigger:focus {
+  color: #a58c57;
+  background: #f8f5ef;
+}
+
+.app-mobile-drawer .ant-drawer-header {
+  border-bottom: 1px solid #eee9de;
+}
+
+.app-mobile-nav {
+  border-inline-end: 0;
 }
 
 .app-content {
@@ -346,26 +370,29 @@
 
 @media (max-width: 768px) {
   .app-header {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding-block: 10px;
-    min-height: auto;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 8px 12px;
+    min-height: 68px;
   }
 
-  .brand {
-    justify-content: center;
+  .brand-logo {
+    width: 52px;
+    height: 52px;
   }
 
   .app-nav {
-    justify-self: stretch;
-    display: flex;
-    justify-content: center;
-    overflow-x: auto;
-    white-space: nowrap;
+    display: none;
   }
 
   .app-header-spacer {
-    display: none;
+    min-height: auto;
+  }
+
+  .app-mobile-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .app-content {

@@ -1,4 +1,6 @@
-import { ConfigProvider, Layout, Menu } from 'antd';
+import { MenuOutlined } from '@ant-design/icons';
+import { Button, ConfigProvider, Drawer, Layout, Menu } from 'antd';
+import { useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
 import AboutPage from './pages/AboutPage';
@@ -38,6 +40,7 @@ function getSelectedMenuKey(pathname) {
 
 function App() {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     {
@@ -85,8 +88,32 @@ function App() {
             className="app-nav"
           />
 
-          <div className="app-header-spacer" aria-hidden="true" />
+          <div className="app-header-spacer" aria-hidden="true">
+            <Button
+              type="text"
+              icon={<MenuOutlined />}
+              className="app-mobile-menu-trigger"
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label="Mo menu"
+            />
+          </div>
         </Header>
+
+        <Drawer
+          title="Menu"
+          placement="right"
+          onClose={() => setIsMobileMenuOpen(false)}
+          open={isMobileMenuOpen}
+          className="app-mobile-drawer"
+        >
+          <Menu
+            mode="vertical"
+            selectedKeys={[getSelectedMenuKey(location.pathname)]}
+            items={menuItems}
+            className="app-mobile-nav"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        </Drawer>
 
         <Content className="app-content">
           <div className="content-shell">
