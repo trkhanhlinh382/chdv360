@@ -10,7 +10,7 @@ import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 const { Content, Footer, Header } = Layout;
-const { Title } = Typography;
+
 
 function getSelectedMenuKey(pathname) {
   if (pathname === '/') {
