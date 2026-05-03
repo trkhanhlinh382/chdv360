@@ -93,7 +93,7 @@ function HomePage() {
 
       <section className="hero-block">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <Title style={{ marginBottom: 8 }}>
+          <Title level={2} style={{ marginBottom: 8 }}>
             <ShopOutlined /> Tòa nhà nổi bật
           </Title>
           <Link to="/toa-nha">
@@ -115,7 +115,7 @@ function HomePage() {
 
       <section className="hero-block">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <Title style={{ marginBottom: 8 }}>
+          <Title level={2} style={{ marginBottom: 8 }}>
             <ApartmentOutlined /> Các căn hộ mới cập nhật
           </Title>
           <Link to="/phong-trong">
@@ -137,7 +137,7 @@ function HomePage() {
 
       <section className="hero-block">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <Title style={{ marginBottom: 8 }}>
+          <Title level={2} style={{ marginBottom: 8 }}>
             <ApartmentOutlined /> Danh sách phòng trống
           </Title>
           <Link to="/phong-trong">

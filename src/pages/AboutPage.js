@@ -71,7 +71,7 @@ function AboutPage() {
         <Space align="center" style={{ marginBottom: 4 }}>
           <img src="/logo360.png" alt="360 Plus" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover' }} />
           <div>
-            <Title style={{ marginBottom: 0 }}>Hệ Thống 360 Plus</Title>
+            <Title level={2} style={{ marginBottom: 0 }}>Hệ Thống 360 Plus</Title>
             <Tag color={isResidentMode ? 'green' : 'gold'} style={{ marginTop: 4, marginBottom: 12, fontSize: 14 }}>
               Căn hộ dịch vụ cao cấp
             </Tag>

@@ -36,6 +36,14 @@ function buildCoordinatesFromId(id) {
   };
 }
 
+function buildGoogleMapsSearchUrl(address) {
+  if (!address) {
+    return null;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
+
 function buildBuildingAmenities(item) {
   const amenities = [];
 
@@ -52,7 +60,7 @@ function buildBuildingAmenities(item) {
 }
 
 function buildRoomAmenities(item) {
-  return [item.type?.name, item.floor?.name, item.status?.title, `${item.maxTenants || 0} nguoi`]
+  return [item.type?.name, item.floor?.name, item.status?.title, `${item.maxTenants || 0} người`]
     .filter(Boolean);
 }
 
@@ -91,13 +99,21 @@ function extractBuildingImages(item) {
 }
 
 function mapResidentBuilding(item) {
+  const fees = (item.fees || []).map((f) => ({
+    id: f.id,
+    name: f.name,
+    price: f.price,
+    unit: f.unit
+  }));
   return {
     id: String(item.id),
     code: item.code,
     name: item.name,
     address: item.fullAddress,
+    mapsSearchUrl: buildGoogleMapsSearchUrl(item.fullAddress || item.address || item.name),
     images: extractBuildingImages(item),
-    amenities: item.amenities?.length ? item.amenities : buildBuildingAmenities(item),
+    fees,
+    amenities: fees.length ? fees.map((f) => f.name) : buildBuildingAmenities(item),
     coordinates: item.coordinates || buildCoordinatesFromId(item.id),
     numberRooms: item.numberRooms || 0,
     ownerId: item.ownerId,

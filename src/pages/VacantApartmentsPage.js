@@ -257,7 +257,7 @@ function VacantApartmentsPage() {
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
       <div className="hero-block">
-        <Title style={{ marginBottom: 8 }}>
+        <Title level={2} style={{ marginBottom: 8 }}>
           <ApartmentOutlined /> Phòng trống sẵn
         </Title>
         <Paragraph style={{ marginBottom: 0 }}>

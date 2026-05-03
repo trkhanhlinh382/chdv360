@@ -115,6 +115,7 @@ function App() {
           onClose={() => setIsMobileMenuOpen(false)}
           open={isMobileMenuOpen}
           className="app-mobile-drawer"
+          width="60%"
         >
           <Menu
             mode="vertical"

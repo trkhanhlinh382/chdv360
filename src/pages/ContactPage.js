@@ -11,7 +11,7 @@ function ContactPage() {
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
       <div className="hero-block">
-        <Title style={{ marginBottom: 8 }}>Liên hệ</Title>
+        <Title level={2} style={{ marginBottom: 8 }}>Liên hệ</Title>
         <Paragraph style={{ marginBottom: 0 }}>
           Cần tư vấn nhanh về tòa nhà và căn hộ? Hãy liên hệ trực tiếp với đội ngũ hỗ
           trợ.

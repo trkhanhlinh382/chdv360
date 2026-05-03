@@ -2,11 +2,13 @@ import {
   BankOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
+  LeftOutlined,
   ThunderboltOutlined,
-  UserOutlined
+  UserOutlined,
 } from '@ant-design/icons';
 import {
   Alert,
+  Button,
   Card,
   Col,
   Descriptions,
@@ -16,11 +18,10 @@ import {
   Row,
   Space,
   Statistic,
-  Tag,
   Typography
 } from 'antd';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import ApartmentCard from '../components/ApartmentCard';
 import ContactButtons from '../components/ContactButtons';
 import ImageGallery from '../components/ImageGallery';
@@ -40,6 +41,7 @@ function formatCurrency(value) {
 
 function ApartmentDetailPage() {
   const { apartmentId } = useParams();
+  const navigate = useNavigate();
   const apartmentState = useApartment(apartmentId);
   const buildingState = useBuilding(apartmentState.data?.buildingId);
   const sameBuildingApartmentsState = useApartmentsByBuilding(
@@ -56,13 +58,18 @@ function ApartmentDetailPage() {
       return 0;
     }
 
+    const buildingFees = (buildingState.data?.fees || []).reduce((sum, f) => {
+      if (f.unit === 'Người') return sum + f.price * occupants;
+      return sum + f.price; // Phòng, Tháng, or other flat fees
+    }, 0);
+
     return (
       apartment.price.base +
-      apartment.price.service +
+      buildingFees +
       apartment.price.electric * estimatedKwh +
       apartment.price.water * occupants
     );
-  }, [apartment, estimatedKwh, occupants]);
+  }, [apartment, buildingState.data, estimatedKwh, occupants]);
 
   const similarApartments = useMemo(() => {
     if (!apartment) {
@@ -91,21 +98,28 @@ function ApartmentDetailPage() {
     sameBuildingApartmentsState.data
   ]);
 
-  const mapEmbedUrl = useMemo(() => {
-    const lat = buildingState.data?.coordinates?.lat;
-    const lng = buildingState.data?.coordinates?.lng;
+  const googleMapsSearchUrl = useMemo(() => {
+    const mapsSearchUrl = buildingState.data?.mapsSearchUrl;
+    if (mapsSearchUrl) {
+      return mapsSearchUrl;
+    }
 
-    if (lat === undefined || lng === undefined) {
+    const address = buildingState.data?.address;
+    if (!address) {
       return null;
     }
 
-    const offset = 0.005;
-    const bbox = [lng - offset, lat - offset, lng + offset, lat + offset]
-      .map((item) => item.toFixed(6))
-      .join('%2C');
-
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
   }, [buildingState.data]);
+
+  const googleMapsEmbedUrl = useMemo(() => {
+    const address = buildingState.data?.address;
+    if (!address) {
+      return null;
+    }
+
+    return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+  }, [buildingState.data?.address]);
 
   if (apartmentState.isLoading) {
     return <LoadingView tip="Đang tải thông tin căn hộ..." />;
@@ -122,14 +136,21 @@ function ApartmentDetailPage() {
 
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
-     
-
       <ImageGallery images={apartment.images} />
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
           <Space direction="vertical" size={14} style={{ width: '100%' }}>
-            <Title level={2}>{apartment.title}</Title>
+            
+            <Title level={2}>
+              <Button
+              className="back-button"
+              icon={<LeftOutlined />}
+              onClick={() => navigate(-1)}
+            >
+            </Button>
+            {apartment.title}
+            </Title>
             <Paragraph>
               Tòa nhà:{' '}
               <Link to={`/buildings/${apartment.buildingId}`}>
@@ -161,39 +182,36 @@ function ApartmentDetailPage() {
               </Col>
               <Col xs={24} sm={8}>
                 <Card className="detail-metric-card" bordered={false}>
-                  <Statistic
-                    title="Phí dịch vụ"
-                    value={apartment.price.service}
-                    formatter={(value) => new Intl.NumberFormat('vi-VN').format(value)}
-                    suffix="VND"
-                    prefix={<ThunderboltOutlined />}
-                  />
+                  <Text type="secondary" style={{ fontSize: 12 }}>Phí dịch vụ tòa nhà</Text>
+                  {buildingState.data?.fees?.length > 0 ? (
+                    <Space direction="vertical" size={2} style={{ marginTop: 6, width: '100%' }}>
+                      {buildingState.data.fees.map((fee) => (
+                        <Text key={fee.id} style={{ fontSize: 12 }}>
+                          <ThunderboltOutlined style={{ marginRight: 4 }} />
+                          {fee.name}: {new Intl.NumberFormat('vi-VN').format(fee.price)} /{fee.unit}
+                        </Text>
+                      ))}
+                    </Space>
+                  ) : (
+                    <Text type="secondary">Đang cập nhật...</Text>
+                  )}
                 </Card>
               </Col>
             </Row>
 
-            <Space wrap>
-              {apartment.amenities.map((item) => (
-                <Tag key={item} color="cyan">
-                  {item}
-                </Tag>
-              ))}
-            </Space>
-
-            <Card title="Thông tin tòa nhà" className="detail-section-card">
+            <Card title="Thông tin căn hộ" className="detail-section-card">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="Tên tòa nhà">
-                  {buildingState.data?.name || 'Đang cập nhật...'}
+                <Descriptions.Item label="Loại phòng">
+                  {apartment.type?.name || 'Đang cập nhật...'}
                 </Descriptions.Item>
-                <Descriptions.Item label="Địa chỉ">
-                  {buildingState.data?.address || 'Đang cập nhật...'}
+                <Descriptions.Item label="Vị trí tầng">
+                  {apartment.floor?.name || 'Đang cập nhật...'}
                 </Descriptions.Item>
-                <Descriptions.Item label="Tiện ích chung">
-                  <Space wrap>
-                    {(buildingState.data?.amenities || []).map((item) => (
-                      <Tag key={item}>{item}</Tag>
-                    ))}
-                  </Space>
+                <Descriptions.Item label="Số lượng người ở tối đa">
+                  {apartment.maxTenants || 0} người
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái">
+                  {apartment.status?.title || 'Đang cập nhật...'}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
@@ -214,46 +232,20 @@ function ApartmentDetailPage() {
                 <Descriptions.Item label="Tiền phòng">
                   {formatCurrency(apartment.price.base)} / tháng
                 </Descriptions.Item>
-                <Descriptions.Item label="Điện">
-                  {formatCurrency(apartment.price.electric)} / kWh
-                </Descriptions.Item>
-                <Descriptions.Item label="Nước">
-                  {formatCurrency(apartment.price.water)} / người
-                </Descriptions.Item>
-                <Descriptions.Item label="Dịch vụ">
-                  {formatCurrency(apartment.price.service)} / tháng
-                </Descriptions.Item>
-                <Descriptions.Item label="Diện tích">
-                  {apartment.area} m2
-                </Descriptions.Item>
+               
+                {(buildingState.data?.fees || []).map((fee) => (
+                  <Descriptions.Item key={fee.id} label={fee.name}>
+                    {new Intl.NumberFormat('vi-VN').format(fee.price)} VND / {fee.unit}
+                  </Descriptions.Item>
+                ))}
+                
               </Descriptions>
 
               <Divider />
 
               <Space direction="vertical" size={12} style={{ width: '100%' }}>
                 <Text strong>Ước tính chi phí hàng tháng</Text>
-                <Row gutter={12}>
-                  <Col span={12}>
-                    <Text type="secondary">Số kWh ước tính</Text>
-                    <InputNumber
-                      min={0}
-                      step={10}
-                      value={estimatedKwh}
-                      onChange={(value) => setEstimatedKwh(value || 0)}
-                      style={{ width: '100%', marginTop: 6 }}
-                    />
-                  </Col>
-                  <Col span={12}>
-                    <Text type="secondary">Số người ở</Text>
-                    <InputNumber
-                      min={1}
-                      step={1}
-                      value={occupants}
-                      onChange={(value) => setOccupants(value || 1)}
-                      style={{ width: '100%', marginTop: 6 }}
-                    />
-                  </Col>
-                </Row>
+              
 
                 <Card size="small" className="estimate-box">
                   <Text type="secondary">Ước tính thanh toán hàng tháng</Text>
@@ -261,7 +253,7 @@ function ApartmentDetailPage() {
                     {formatCurrency(monthlyEstimate)}
                   </Title>
                   <Text type="secondary">
-                    Công thức: tiền phòng + dịch vụ + (điện × kWh) + (nước × số người)
+                    Công thức: tiền phòng + dịch vụ 
                   </Text>
                 </Card>
               </Space>
@@ -281,21 +273,23 @@ function ApartmentDetailPage() {
             </Card>
 
             <Card title="Bản đồ" className="detail-section-card">
-              {mapEmbedUrl ? (
+              {googleMapsSearchUrl ? (
                 <>
-                  <iframe
-                    title="building-map"
-                    src={mapEmbedUrl}
-                    className="mini-map-frame"
-                    loading="lazy"
-                  />
-                  <Paragraph type="secondary" style={{ marginTop: 10, marginBottom: 0 }}>
-                    Tọa độ: {buildingState.data.coordinates.lat},{' '}
-                    {buildingState.data.coordinates.lng}
+                  {googleMapsEmbedUrl ? (
+                    <iframe
+                      title="google-map-mini"
+                      src={googleMapsEmbedUrl}
+                      className="mini-map-frame"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <Paragraph style={{ marginBottom: 10 }}>
+                    {buildingState.data?.address || 'Đang cập nhật địa chỉ...'}
                   </Paragraph>
+                  
                 </>
               ) : (
-                <Empty description="Không có tọa độ bản đồ" />
+                <Empty description="Không có địa chỉ để mở bản đồ" />
               )}
             </Card>
 
