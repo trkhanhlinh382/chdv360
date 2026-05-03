@@ -10,6 +10,7 @@ import BuildingDetailPage from './pages/BuildingDetailPage';
 import ContactPage from './pages/ContactPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
+import VacantApartmentsPage from './pages/VacantApartmentsPage';
 
 const { Content, Footer, Header } = Layout;
 
@@ -29,6 +30,10 @@ function getSelectedMenuKey(pathname) {
     pathname.startsWith('/apartments')
   ) {
     return '/toa-nha';
+  }
+
+  if (pathname.startsWith('/phong-trong')) {
+    return '/phong-trong';
   }
 
   if (pathname.startsWith('/lien-he')) {
@@ -54,6 +59,10 @@ function App() {
     {
       key: '/toa-nha',
       label: <Link to="/toa-nha">Tòa nhà</Link>
+    },
+    {
+      key: '/phong-trong',
+      label: <Link to="/phong-trong">Phòng trống</Link>
     },
     {
       key: '/lien-he',
@@ -121,6 +130,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/gioi-thieu" element={<AboutPage />} />
               <Route path="/toa-nha" element={<BuildingsPage />} />
+              <Route path="/phong-trong" element={<VacantApartmentsPage />} />
               <Route path="/lien-he" element={<ContactPage />} />
               <Route path="/buildings/:buildingId" element={<BuildingDetailPage />} />
               <Route

@@ -65,9 +65,25 @@ function AboutPage() {
         <Tag color={isResidentMode ? 'green' : 'gold'} style={{ marginBottom: 12 }}>
          
         </Tag>
+        <Paragraph style={{ marginBottom: 10 }}>
+          - Quản lý kinh Doanh và vận hành chdv khu vực các Quận 6 - Quận 12 - quận tân phú - quận Bình thạnh - Quận gò vấp
+         
+        </Paragraph>
         <Paragraph style={{ marginBottom: 0 }}>
-          CÔNG TY TNHH DỊCH VỤ 360 PLUS vận hành nền tảng tìm phòng giúp khách hàng
-          tiếp cận danh sách tòa nhà, phòng giá tốt và thông tin được cập nhật liên tục.
+          - HỆ THỐNG CHDV 360 PLUS
+          ĐANG CÓ NHU CẦU THUÊ CÁC TÒA NHÀ LÀM CHDV 
+          khu vực Tân phú .Gò vấp _Quận 6 _Tân Phú_ Bình Thạnh - Quận 12 
+           
+
+          
+        </Paragraph>
+         <Paragraph style={{ marginBottom: 0 }}>
+          - Số lượng tòa nhà không giới hạn
+         
+        </Paragraph>
+        <Paragraph style={{ marginBottom: 0 }}>
+          - YÊU CẦU :Các toà nhà từ 30-100 phòng có hệ thống pccc Thang máy ký hợp đồng chính chủ
+         
         </Paragraph>
       </div>
 
