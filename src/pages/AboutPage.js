@@ -38,9 +38,9 @@ const highlights = [
 ];
 
 const companyImages = [
-  'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=1400&q=80',
-  'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&w=1400&q=80'
+  '/360plus01.jpg',
+  '/360plus02.jpg',
+  '/360plus03.jpg'
 ];
 
 function AboutPage() {
