@@ -1,4 +1,3 @@
-import { HomeOutlined } from '@ant-design/icons';
 import { ConfigProvider, Layout, Menu, Typography } from 'antd';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
@@ -63,21 +62,21 @@ function App() {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#0f766e',
+          colorPrimary: '#bda46a',
+          colorText: '#5f5140',
+          colorTextHeading: '#524636',
+          colorTextSecondary: '#82745f',
+          colorLink: '#9b8451',
+          colorLinkHover: '#bda46a',
           borderRadius: 12
         }
       }}
     >
       <Layout className="app-layout">
         <Header className="app-header">
-          <div className="brand">
-            <HomeOutlined />
-            <Title level={4} style={{ color: '#fff', margin: 0 }}>
-              <Link to="/" className="brand-link">
-                Nhà Trọ 360
-              </Link>
-            </Title>
-          </div>
+          <Link to="/">
+            <img src="/logo360.png" alt="Logo CHDV 360 Plus" className="brand-logo" />
+          </Link>
 
           <Menu
             mode="horizontal"
@@ -108,7 +107,7 @@ function App() {
         </Content>
 
         <Footer style={{ textAlign: 'center' }}>
-          Nhà Trọ 360 Plus
+          CHDV 360 Plus
         </Footer>
       </Layout>
     </ConfigProvider>

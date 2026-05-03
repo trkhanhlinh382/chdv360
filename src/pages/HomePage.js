@@ -90,30 +90,30 @@ function HomePage() {
       <section className="company-footer-block">
         <Row gutter={[16, 16]}>
           <Col xs={24} md={10}>
-            <Title level={4} style={{ marginBottom: 6, color: '#ecfeff' }}>
+            <Title level={4} style={{ marginBottom: 6, color: '#564a38' }}>
               CÔNG TY TNHH DỊCH VỤ 360 PLUS
             </Title>
-            <Paragraph style={{ color: '#cbd5e1', marginBottom: 0 }}>
+            <Paragraph style={{ color: '#6f624e', marginBottom: 0 }}>
               Giải pháp tìm phòng, quản lý phòng và kết nối khách thuê với dữ liệu cập
               nhật liên tục theo thị trường.
             </Paragraph>
-            <Paragraph style={{ color: '#cbd5e1', marginBottom: 0, marginTop: 8 }}>
+            <Paragraph style={{ color: '#6f624e', marginBottom: 0, marginTop: 8 }}>
               Mã số thuế: 039391686
             </Paragraph>
           </Col>
           <Col xs={24} md={7}>
-            <Paragraph style={{ color: '#e2e8f0', marginBottom: 8 }}>
+            <Paragraph style={{ color: '#665946', marginBottom: 8 }}>
               <EnvironmentOutlined /> 180 Phan Huy Ích, phường An Hội Tây, TP HCM
             </Paragraph>
-            <Paragraph style={{ color: '#e2e8f0', marginBottom: 0 }}>
+            <Paragraph style={{ color: '#665946', marginBottom: 0 }}>
               360PLUS6868@GMAIL.COM
             </Paragraph>
           </Col>
           <Col xs={24} md={7}>
-            <Paragraph style={{ color: '#e2e8f0', marginBottom: 8 }}>
+            <Paragraph style={{ color: '#665946', marginBottom: 8 }}>
               <PhoneOutlined /> HOTLINE: 0927 360 360
             </Paragraph>
-            <Paragraph style={{ color: '#cbd5e1', marginBottom: 0 }}>
+            <Paragraph style={{ color: '#6f624e', marginBottom: 0 }}>
               Hỗ trợ tư vấn và xem phòng mỗi ngày
             </Paragraph>
           </Col>

@@ -3,7 +3,6 @@ import {
   BarChartOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  HomeOutlined,
   ShopOutlined,
   ThunderboltOutlined
 } from '@ant-design/icons';
@@ -16,7 +15,7 @@ const isResidentMode = process.env.REACT_APP_USE_RESIDENT_API === 'true';
 
 const highlights = [
   {
-    icon: <HomeOutlined />,
+    icon: <img src="/logo360.png" alt="360 logo" className="inline-logo-icon" />,
     title: 'Phòng giá tốt, dữ liệu minh bạch',
     description: 'Giá phòng, diện tích, tình trạng phòng được cập nhật rõ ràng để dễ so sánh.'
   },
