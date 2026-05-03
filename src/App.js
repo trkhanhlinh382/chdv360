@@ -1,4 +1,4 @@
-import { ConfigProvider, Layout, Menu, Typography } from 'antd';
+import { ConfigProvider, Layout, Menu } from 'antd';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
 import AboutPage from './pages/AboutPage';
