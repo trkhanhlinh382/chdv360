@@ -24,6 +24,8 @@ function BuildingDetailPage() {
   const { buildingId } = useParams();
   const [maxPrice, setMaxPrice] = useState();
   const [minArea, setMinArea] = useState();
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState();
+  const [appliedMinArea, setAppliedMinArea] = useState();
 
   const buildingState = useBuilding(buildingId);
   const apartmentsState = useApartmentsByBuilding(buildingId);
@@ -32,12 +34,12 @@ function BuildingDetailPage() {
     () => {
       const apartments = apartmentsState.data || [];
       return apartments.filter((item) => {
-        const isPriceMatched = maxPrice ? item.price.base <= maxPrice : true;
-        const isAreaMatched = minArea ? item.area >= minArea : true;
+        const isPriceMatched = appliedMaxPrice ? item.price.base <= appliedMaxPrice : true;
+        const isAreaMatched = appliedMinArea ? item.area >= appliedMinArea : true;
         return isPriceMatched && isAreaMatched;
       });
     },
-    [apartmentsState.data, maxPrice, minArea]
+    [apartmentsState.data, appliedMaxPrice, appliedMinArea]
   );
 
   const priceMaxBound = useMemo(() => {
@@ -72,11 +74,7 @@ function BuildingDetailPage() {
 
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
-      <Link to="/toa-nha">
-        <Button icon={<LeftOutlined />} className="back-button" size="large">
-          Quay lại tòa nhà
-        </Button>
-      </Link>
+      
 
       <ImageGallery images={buildingState.data.images} />
 
@@ -129,15 +127,29 @@ function BuildingDetailPage() {
             />
           </Col>
           <Col xs={24} lg={4}>
-            <Button
-              block
-              onClick={() => {
-                setMaxPrice(undefined);
-                setMinArea(undefined);
-              }}
-            >
-              Xóa bộ lọc
-            </Button>
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Button
+                type="primary"
+                block
+                onClick={() => {
+                  setAppliedMaxPrice(maxPrice);
+                  setAppliedMinArea(minArea);
+                }}
+              >
+                Áp dụng bộ lọc
+              </Button>
+              <Button
+                block
+                onClick={() => {
+                  setMaxPrice(undefined);
+                  setMinArea(undefined);
+                  setAppliedMaxPrice(undefined);
+                  setAppliedMinArea(undefined);
+                }}
+              >
+                Xóa bộ lọc
+              </Button>
+            </Space>
           </Col>
         </Row>
       </Card>

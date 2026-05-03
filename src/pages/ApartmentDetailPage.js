@@ -124,11 +124,7 @@ function ApartmentDetailPage() {
 
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
-      <Link to={`/buildings/${apartment.buildingId}`}>
-        <Button icon={<LeftOutlined />} className="back-button" size="large">
-          Quay lại tòa nhà
-        </Button>
-      </Link>
+     
 
       <ImageGallery images={apartment.images} />
 

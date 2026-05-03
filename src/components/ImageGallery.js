@@ -49,7 +49,7 @@ function ImageGallery({ images, height = 360 }) {
                 }}
               />
               <span className="gallery-zoom-badge">
-                <ZoomInOutlined /> Xem lon
+                <ZoomInOutlined /> 
               </span>
             </button>
           </div>

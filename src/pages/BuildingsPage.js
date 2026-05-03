@@ -54,34 +54,7 @@ function BuildingsPage() {
         </Paragraph>
       </div>
 
-      <Card className="filter-card" bordered={false}>
-        <Row gutter={[16, 12]} align="middle">
-          <Col xs={24} md={12} lg={14}>
-            <Input
-              placeholder="Tìm theo tên tòa nhà hoặc địa chỉ"
-              size="large"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </Col>
-          <Col xs={24} md={8} lg={7}>
-            <Select
-              allowClear
-              placeholder="Lọc theo tiện ích"
-              size="large"
-              style={{ width: '100%' }}
-              options={amenityOptions}
-              value={amenityFilter}
-              onChange={(value) => setAmenityFilter(value)}
-            />
-          </Col>
-          <Col xs={24} md={4} lg={3}>
-            <Tag color="geekblue" style={{ width: '100%', textAlign: 'center', padding: 8 }}>
-              {filteredBuildings.length} kết quả
-            </Tag>
-          </Col>
-        </Row>
-      </Card>
+     
 
       <Row gutter={[16, 16]}>
         {filteredBuildings.map((building) => (

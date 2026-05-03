@@ -1,7 +1,7 @@
 import {
+  EnvironmentOutlined,
   MessageOutlined,
   PhoneOutlined,
-  TeamOutlined,
   WechatOutlined
 } from '@ant-design/icons';
 import { Button, Card, Col, Row, Space, Typography } from 'antd';
@@ -53,19 +53,6 @@ function ContactPage() {
           </Card>
         </Col>
       </Row>
-
-      <Card>
-        <Space direction="vertical" size={8}>
-          <Text strong style={{ fontSize: 16 }}>
-            <TeamOutlined /> Văn phòng tư vấn
-          </Text>
-          <Text>Công ty: CÔNG TY TNHH DỊCH VỤ 360 PLUS</Text>
-          <Text>MST: 039391686</Text>
-          <Text>Địa chỉ: 180 Phan Huy Ích, phường An Hội Tây, TP HCM</Text>
-          <Text>Email: 360PLUS6868@GMAIL.COM</Text>
-          <Text type="secondary">Thời gian làm việc: 08:00 - 21:00 (Tất cả các ngày)</Text>
-        </Space>
-      </Card>
     </Space>
   );
 }

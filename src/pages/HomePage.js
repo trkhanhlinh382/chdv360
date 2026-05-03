@@ -1,10 +1,9 @@
 import {
   ApartmentOutlined,
-  EnvironmentOutlined,
-  PhoneOutlined,
   ShopOutlined
 } from '@ant-design/icons';
-import { Col, Row, Space, Typography } from 'antd';
+import { Button, Col, Empty, Row, Space, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import ApartmentCard from '../components/ApartmentCard';
 import BuildingCard from '../components/BuildingCard';
 import { ErrorView, LoadingView } from '../components/StateView';
@@ -12,9 +11,48 @@ import { useApartments, useBuildings } from '../services/api/hooks';
 
 const { Paragraph, Title } = Typography;
 
+function normalizeText(value) {
+  return (value || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function isVacantApartment(apartment) {
+  if (!apartment?.status) {
+    return true;
+  }
+
+  const status = apartment.status;
+
+  if (typeof status === 'string') {
+    const normalized = normalizeText(status);
+    return (
+      normalized.includes('trong') ||
+      normalized.includes('vacant') ||
+      normalized.includes('available')
+    );
+  }
+
+  const statusId = String(status.id || '');
+  if (statusId === '1') {
+    return true;
+  }
+
+  const statusLabel = normalizeText(status.title || status.name || status.code);
+  return (
+    statusLabel.includes('trong') ||
+    statusLabel.includes('vacant') ||
+    statusLabel.includes('available')
+  );
+}
+
 function HomePage() {
   const buildingsState = useBuildings();
   const apartmentsState = useApartments();
+  const vacantApartments = (apartmentsState.data || []).filter((item) => isVacantApartment(item));
 
   if (buildingsState.isLoading || apartmentsState.isLoading) {
     return <LoadingView tip="Đang tải dữ liệu trang chủ..." />;
@@ -54,9 +92,14 @@ function HomePage() {
       </section>
 
       <section className="hero-block">
-        <Title style={{ marginBottom: 8 }}>
-          <ShopOutlined /> Tòa nhà nổi bật
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Title style={{ marginBottom: 8 }}>
+            <ShopOutlined /> Tòa nhà nổi bật
+          </Title>
+          <Link to="/toa-nha">
+            <Button className="section-more-btn">Xem thêm</Button>
+          </Link>
+        </div>
         <Paragraph style={{ marginBottom: 0 }}>
           Tổng cộng {buildingsState.data?.length || 0} tòa nhà đang mở cho thuê.
         </Paragraph>
@@ -71,9 +114,14 @@ function HomePage() {
       </Row>
 
       <section className="hero-block">
-        <Title style={{ marginBottom: 8 }}>
-          <ApartmentOutlined /> Các căn hộ mới cập nhật
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Title style={{ marginBottom: 8 }}>
+            <ApartmentOutlined /> Các căn hộ mới cập nhật
+          </Title>
+          <Link to="/phong-trong">
+            <Button className="section-more-btn">Xem thêm</Button>
+          </Link>
+        </div>
         <Paragraph style={{ marginBottom: 0 }}>
           Danh sách căn hộ có giá và diện tích minh bạch để bạn so sánh nhanh.
         </Paragraph>
@@ -87,38 +135,31 @@ function HomePage() {
         ))}
       </Row>
 
-      <section className="company-footer-block">
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={10}>
-            <Title level={4} style={{ marginBottom: 6, color: '#564a38' }}>
-              CÔNG TY TNHH DỊCH VỤ 360 PLUS
-            </Title>
-            <Paragraph style={{ color: '#6f624e', marginBottom: 0 }}>
-              Giải pháp tìm phòng, quản lý phòng và kết nối khách thuê với dữ liệu cập
-              nhật liên tục theo thị trường.
-            </Paragraph>
-            <Paragraph style={{ color: '#6f624e', marginBottom: 0, marginTop: 8 }}>
-              Mã số thuế: 039391686
-            </Paragraph>
-          </Col>
-          <Col xs={24} md={7}>
-            <Paragraph style={{ color: '#665946', marginBottom: 8 }}>
-              <EnvironmentOutlined /> 180 Phan Huy Ích, phường An Hội Tây, TP HCM
-            </Paragraph>
-            <Paragraph style={{ color: '#665946', marginBottom: 0 }}>
-              360PLUS6868@GMAIL.COM
-            </Paragraph>
-          </Col>
-          <Col xs={24} md={7}>
-            <Paragraph style={{ color: '#665946', marginBottom: 8 }}>
-              <PhoneOutlined /> HOTLINE: 0927 360 360
-            </Paragraph>
-            <Paragraph style={{ color: '#6f624e', marginBottom: 0 }}>
-              Hỗ trợ tư vấn và xem phòng mỗi ngày
-            </Paragraph>
-          </Col>
-        </Row>
+      <section className="hero-block">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Title style={{ marginBottom: 8 }}>
+            <ApartmentOutlined /> Danh sách phòng trống
+          </Title>
+          <Link to="/phong-trong">
+            <Button className="section-more-btn">Xem thêm</Button>
+          </Link>
+        </div>
+        <Paragraph style={{ marginBottom: 0 }}>
+          Hiện có {vacantApartments.length} phòng trống sẵn, cập nhật theo trạng thái thực tế.
+        </Paragraph>
       </section>
+
+      {vacantApartments.length === 0 ? (
+        <Empty description="Hiện chưa có phòng trống" />
+      ) : (
+        <Row gutter={[16, 16]}>
+          {vacantApartments.slice(0, 6).map((apartment) => (
+            <Col xs={24} sm={12} lg={8} key={`vacant-${apartment.id}`}>
+              <ApartmentCard apartment={apartment} />
+            </Col>
+          ))}
+        </Row>
+      )}
     </Space>
   );
 }

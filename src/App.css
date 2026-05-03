@@ -34,11 +34,11 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(255, 255, 255, 0.96);
+  background: #c8b598;
   min-height: 76px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  border-bottom: 1px solid #ebe7de;
-  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-bottom: none;
+  backdrop-filter: none;
 }
 
 .brand {
@@ -49,9 +49,9 @@
 }
 
 .brand-logo {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  border-radius: 25%;
   object-fit: cover;
 }
 
@@ -73,10 +73,10 @@
 
 .app-nav {
   justify-self: center;
-  background: #ffffff;
-  border: 1px solid #eee9de;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 999px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
   font-weight: 700;
   min-width: 520px;
   padding-inline: 8px;
@@ -84,11 +84,13 @@
 
 .app-nav .ant-menu-item,
 .app-nav .ant-menu-item a {
-  color: #8d7748;
+  color: #3a2e1e;
 }
 
 .app-nav.ant-menu-horizontal {
-  line-height: 74px;
+  line-height: 44px;
+  height: 44px;
+  align-self: center;
 }
 
 .app-nav.ant-menu-horizontal > .ant-menu-item {
@@ -98,22 +100,22 @@
 
 .app-nav.ant-menu-horizontal > .ant-menu-item:hover,
 .app-nav.ant-menu-horizontal > .ant-menu-item-active {
-  background: #f8f5ef;
+  background: transparent;
 }
 
 .app-nav.ant-menu-horizontal > .ant-menu-item:hover a,
 .app-nav.ant-menu-horizontal > .ant-menu-item-active a,
 .app-nav.ant-menu-horizontal > .ant-menu-item-selected a {
-  color: #a58c57 !important;
+  color: #221a10 !important;
 }
 
 .app-nav.ant-menu-horizontal > .ant-menu-item-selected {
-  background: #f5f1e8;
+  background: transparent;
 }
 
 .app-nav.ant-menu-horizontal > .ant-menu-item-selected::after,
 .app-nav.ant-menu-horizontal > .ant-menu-item-active::after {
-  border-bottom-color: #bda46a;
+  border-bottom-color: #564a38;
   border-bottom-width: 3px;
 }
 
@@ -125,7 +127,7 @@
 
 .app-mobile-menu-trigger {
   display: none;
-  color: #8d7748;
+  color: #3a2e1e;
   font-size: 20px;
   width: 42px;
   height: 42px;
@@ -133,8 +135,8 @@
 
 .app-mobile-menu-trigger:hover,
 .app-mobile-menu-trigger:focus {
-  color: #a58c57;
-  background: #f8f5ef;
+  color: #221a10;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .app-mobile-drawer .ant-drawer-header {
@@ -204,6 +206,37 @@
   margin-bottom: 0;
   max-width: 640px;
   font-size: 16px;
+}
+
+.section-more-btn {
+  border-radius: 999px;
+  border: 1px solid #b8a88a;
+  background: #c8b598;
+  color: #3a2e1e;
+  font-weight: 600;
+  padding-inline: 16px;
+}
+
+.section-more-btn:hover,
+.section-more-btn:focus {
+  background: #bca987;
+  border-color: #9f8c69;
+  color: #221a10;
+}
+
+.app-footer {
+  background: #c8b598;
+  padding: 32px 24px;
+  width: 100%;
+}
+
+.app-footer .ant-typography {
+  color: #3a2e1e !important;
+}
+
+.app-footer h4.ant-typography {
+  color: #221a10 !important;
+  font-weight: 700;
 }
 
 .company-footer-block {

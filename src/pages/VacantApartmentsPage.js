@@ -1,5 +1,5 @@
 import { ApartmentOutlined, EnvironmentOutlined } from '@ant-design/icons';
-import { Card, Col, Empty, Input, Row, Select, Space, Tag, Typography } from 'antd';
+import { Button, Card, Col, Empty, Input, Row, Select, Space, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import ApartmentCard from '../components/ApartmentCard';
 import { ErrorView, LoadingView } from '../components/StateView';
@@ -135,6 +135,30 @@ function VacantApartmentsPage() {
   const [areaRangeFilter, setAreaRangeFilter] = useState();
   const [priceSort, setPriceSort] = useState('price-asc');
 
+  // applied state — results only update when user clicks "Áp dụng"
+  const [applied, setApplied] = useState({
+    keyword: '',
+    areaFilter: undefined,
+    buildingFilter: undefined,
+    priceRangeFilter: undefined,
+    areaRangeFilter: undefined,
+    priceSort: 'price-asc'
+  });
+
+  const applyFilters = () => {
+    setApplied({ keyword, areaFilter, buildingFilter, priceRangeFilter, areaRangeFilter, priceSort });
+  };
+
+  const resetFilters = () => {
+    setKeyword('');
+    setAreaFilter(undefined);
+    setBuildingFilter(undefined);
+    setPriceRangeFilter(undefined);
+    setAreaRangeFilter(undefined);
+    setPriceSort('price-asc');
+    setApplied({ keyword: '', areaFilter: undefined, buildingFilter: undefined, priceRangeFilter: undefined, areaRangeFilter: undefined, priceSort: 'price-asc' });
+  };
+
   const buildingMap = useMemo(() => {
     return new Map((buildingsState.data || []).map((item) => [String(item.id), item]));
   }, [buildingsState.data]);
@@ -174,7 +198,7 @@ function VacantApartmentsPage() {
   }, [vacantApartments, buildingMap]);
 
   const filteredApartments = useMemo(() => {
-    const normalizedKeyword = normalizeText(keyword);
+    const normalizedKeyword = normalizeText(applied.keyword);
 
     const filtered = vacantApartments.filter((item) => {
       const building = buildingMap.get(String(item.buildingId));
@@ -182,10 +206,10 @@ function VacantApartmentsPage() {
       const price = item.price?.base || 0;
       const roomArea = item.area || 0;
 
-      const isAreaMatch = areaFilter ? area === areaFilter : true;
-      const isBuildingMatch = buildingFilter ? String(item.buildingId) === buildingFilter : true;
-      const isPriceMatch = isPriceInRange(price, priceRangeFilter);
-      const isRoomAreaMatch = isAreaInRange(roomArea, areaRangeFilter);
+      const isAreaMatch = applied.areaFilter ? area === applied.areaFilter : true;
+      const isBuildingMatch = applied.buildingFilter ? String(item.buildingId) === applied.buildingFilter : true;
+      const isPriceMatch = isPriceInRange(price, applied.priceRangeFilter);
+      const isRoomAreaMatch = isAreaInRange(roomArea, applied.areaRangeFilter);
       const isKeywordMatch = normalizedKeyword
         ? normalizeText(`${item.title} ${building?.name || ''} ${building?.address || ''}`).includes(
             normalizedKeyword
@@ -204,18 +228,9 @@ function VacantApartmentsPage() {
     return filtered.sort((a, b) => {
       const priceA = a.price?.base || 0;
       const priceB = b.price?.base || 0;
-      return priceSort === 'price-desc' ? priceB - priceA : priceA - priceB;
+      return applied.priceSort === 'price-desc' ? priceB - priceA : priceA - priceB;
     });
-  }, [
-    vacantApartments,
-    buildingMap,
-    areaFilter,
-    buildingFilter,
-    priceRangeFilter,
-    areaRangeFilter,
-    keyword,
-    priceSort
-  ]);
+  }, [vacantApartments, buildingMap, applied]);
 
   if (apartmentsState.isLoading || buildingsState.isLoading) {
     return <LoadingView tip="Đang tải danh sách phòng trống..." />;
@@ -250,101 +265,110 @@ function VacantApartmentsPage() {
         </Paragraph>
       </div>
 
-      <Card className="filter-card" bordered={false}>
-        <Row gutter={[16, 12]} align="middle">
-          <Col xs={24} md={12} lg={8}>
-            <Input
-              placeholder="Tìm theo tên phòng, tòa nhà, địa chỉ"
-              size="large"
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={4}>
-            <Select
-              allowClear
-              placeholder="Lọc theo khu vực"
-              size="large"
-              style={{ width: '100%' }}
-              options={areaOptions}
-              value={areaFilter}
-              onChange={(value) => setAreaFilter(value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={4}>
-            <Select
-              allowClear
-              placeholder="Lọc theo tòa nhà"
-              size="large"
-              style={{ width: '100%' }}
-              options={buildingOptions}
-              value={buildingFilter}
-              onChange={(value) => setBuildingFilter(value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={3}>
-            <Select
-              allowClear
-              placeholder="Khoảng giá"
-              size="large"
-              style={{ width: '100%' }}
-              options={PRICE_RANGE_OPTIONS}
-              value={priceRangeFilter}
-              onChange={(value) => setPriceRangeFilter(value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={3}>
-            <Select
-              allowClear
-              placeholder="Diện tích"
-              size="large"
-              style={{ width: '100%' }}
-              options={AREA_RANGE_OPTIONS}
-              value={areaRangeFilter}
-              onChange={(value) => setAreaRangeFilter(value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={2}>
-            <Select
-              placeholder="Sắp xếp"
-              size="large"
-              style={{ width: '100%' }}
-              options={PRICE_SORT_OPTIONS}
-              value={priceSort}
-              onChange={(value) => setPriceSort(value)}
-            />
-          </Col>
-          <Col xs={24} md={12} lg={24}>
-            <Tag color="gold" style={{ width: '100%', textAlign: 'center', padding: 8 }}>
+      <Row gutter={[16, 16]} align="top">
+        <Col xs={24} lg={8} xl={7}>
+          <Card className="filter-card sticky-contact-card" bordered={false}>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <Text strong>Bộ lọc phòng trống</Text>
+
+              <Input
+                placeholder="Tìm theo tên phòng, tòa nhà, địa chỉ"
+                size="large"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+
+              <Select
+                allowClear
+                placeholder="Lọc theo khu vực"
+                size="large"
+                style={{ width: '100%' }}
+                options={areaOptions}
+                value={areaFilter}
+                onChange={(value) => setAreaFilter(value)}
+              />
+
+              <Select
+                allowClear
+                placeholder="Lọc theo tòa nhà"
+                size="large"
+                style={{ width: '100%' }}
+                options={buildingOptions}
+                value={buildingFilter}
+                onChange={(value) => setBuildingFilter(value)}
+              />
+
+              <Select
+                allowClear
+                placeholder="Khoảng giá"
+                size="large"
+                style={{ width: '100%' }}
+                options={PRICE_RANGE_OPTIONS}
+                value={priceRangeFilter}
+                onChange={(value) => setPriceRangeFilter(value)}
+              />
+
+              <Select
+                allowClear
+                placeholder="Diện tích"
+                size="large"
+                style={{ width: '100%' }}
+                options={AREA_RANGE_OPTIONS}
+                value={areaRangeFilter}
+                onChange={(value) => setAreaRangeFilter(value)}
+              />
+
+              <Select
+                placeholder="Sắp xếp theo giá"
+                size="large"
+                style={{ width: '100%' }}
+                options={PRICE_SORT_OPTIONS}
+                value={priceSort}
+                onChange={(value) => setPriceSort(value)}
+              />
+
+              <Button type="primary" onClick={applyFilters} size="large" block>
+                Áp dụng bộ lọc
+              </Button>
+              <Button onClick={resetFilters} size="large" block>
+                Xóa bộ lọc
+              </Button>
+            </Space>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={16} xl={17}>
+          <Space direction="vertical" size={14} style={{ width: '100%' }}>
+            <Tag color="gold" style={{ width: 'fit-content', padding: '6px 12px' }}>
               {filteredApartments.length} kết quả
             </Tag>
-          </Col>
-        </Row>
-      </Card>
 
-      {filteredApartments.length === 0 ? (
-        <div className="center-box">
-          <Empty description="Không tìm thấy phòng trống phù hợp" />
-        </div>
-      ) : (
-        <Row gutter={[16, 16]}>
-          {filteredApartments.map((apartment) => {
-            const building = buildingMap.get(String(apartment.buildingId));
-            const area = extractAreaFromAddress(building?.address);
+            {filteredApartments.length === 0 ? (
+              <div className="center-box">
+                <Empty description="Không tìm thấy phòng trống phù hợp" />
+              </div>
+            ) : (
+              <Row gutter={[16, 16]}>
+                {filteredApartments.map((apartment) => {
+                  const building = buildingMap.get(String(apartment.buildingId));
+                  const area = extractAreaFromAddress(building?.address);
 
-            return (
-              <Col xs={24} sm={12} lg={8} key={apartment.id}>
-                <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <ApartmentCard apartment={apartment} />
-                  <Text type="secondary">
-                    <EnvironmentOutlined /> {building?.name || 'Không rõ tòa nhà'} - {area}
-                  </Text>
-                </Space>
-              </Col>
-            );
-          })}
-        </Row>
-      )}
+                  return (
+                    <Col xs={24} sm={12} xl={8} key={apartment.id}>
+                      <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                        <ApartmentCard apartment={apartment} />
+                        <Text type="secondary">
+                          <EnvironmentOutlined /> {building?.name || 'Không rõ tòa nhà'} - {area}
+                        </Text>
+                      </Space>
+                    </Col>
+                  );
+                })}
+              </Row>
+            )}
+          </Space>
+        </Col>
+      </Row>
     </Space>
   );
 }

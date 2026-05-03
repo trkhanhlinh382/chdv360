@@ -1,5 +1,5 @@
-import { MenuOutlined } from '@ant-design/icons';
-import { Button, ConfigProvider, Drawer, Layout, Menu } from 'antd';
+import { EnvironmentOutlined, MailOutlined, MenuOutlined, PhoneOutlined } from '@ant-design/icons';
+import { Button, ConfigProvider, Drawer, Layout, Menu, Row, Col, Typography } from 'antd';
 import { useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
@@ -13,6 +13,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import VacantApartmentsPage from './pages/VacantApartmentsPage';
 
 const { Content, Footer, Header } = Layout;
+const { Paragraph, Title } = Typography;
 
 
 function getSelectedMenuKey(pathname) {
@@ -143,8 +144,37 @@ function App() {
           </div>
         </Content>
 
-        <Footer style={{ textAlign: 'center' }}>
-          CHDV 360 Plus
+        <Footer className="app-footer">
+          <Row gutter={[24, 20]} style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <Col xs={24} md={10}>
+              <Title level={4} style={{ marginBottom: 6 }}>
+                CÔNG TY TNHH DỊCH VỤ 360 PLUS
+              </Title>
+              <Paragraph style={{ marginBottom: 0 }}>
+                Giải pháp tìm phòng, quản lý phòng và kết nối khách thuê với dữ liệu cập
+                nhật liên tục theo thị trường.
+              </Paragraph>
+              <Paragraph style={{ marginBottom: 0, marginTop: 8 }}>
+                Mã số thuế: 039391686
+              </Paragraph>
+            </Col>
+            <Col xs={24} md={7}>
+              <Paragraph style={{ marginBottom: 8 }}>
+                <EnvironmentOutlined /> 180 Phan Huy Ích, phường An Hội Tây, TP HCM
+              </Paragraph>
+              <Paragraph style={{ marginBottom: 0 }}>
+                <MailOutlined /> 360PLUS6868@GMAIL.COM
+              </Paragraph>
+            </Col>
+            <Col xs={24} md={7}>
+              <Paragraph style={{ marginBottom: 8 }}>
+                <PhoneOutlined /> HOTLINE: 0927 360 360
+              </Paragraph>
+              <Paragraph style={{ marginBottom: 0 }}>
+                Hỗ trợ tư vấn và xem phòng mỗi ngày
+              </Paragraph>
+            </Col>
+          </Row>
         </Footer>
       </Layout>
     </ConfigProvider>
