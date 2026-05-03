@@ -1,5 +1,5 @@
 import { ApartmentOutlined } from '@ant-design/icons';
-import { Card, Col, Input, Row, Select, Space, Tag, Typography } from 'antd';
+import { Col, Row, Space, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import BuildingCard from '../components/BuildingCard';
 import { ErrorView, LoadingView } from '../components/StateView';
@@ -9,16 +9,8 @@ const { Paragraph, Title } = Typography;
 
 function BuildingsPage() {
   const { data, error, isLoading, mutate } = useBuildings();
-  const [keyword, setKeyword] = useState('');
-  const [amenityFilter, setAmenityFilter] = useState();
-
-  const amenityOptions = useMemo(() => {
-    const items = data || [];
-    return [...new Set(items.flatMap((item) => item.amenities))].map((item) => ({
-      label: item,
-      value: item
-    }));
-  }, [data]);
+  const [keyword] = useState('');
+  const [amenityFilter] = useState();
 
   const filteredBuildings = useMemo(() => {
     const items = data || [];
