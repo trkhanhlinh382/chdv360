@@ -170,6 +170,7 @@ function mapResidentRoom(item) {
       water: 0,
       service: 0
     },
+    updatedAt: item.updated_at || null,
     amenities: item.amenities?.length ? item.amenities : buildRoomAmenities(item),
     images: extractRoomImages(item, placeholderImage),
     contact: {

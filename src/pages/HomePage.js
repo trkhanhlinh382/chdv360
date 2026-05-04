@@ -106,7 +106,7 @@ function HomePage() {
       </section>
 
       <Row gutter={[16, 16]}>
-        {buildingsState.data?.map((building) => (
+        {buildingsState.data?.slice(0, 6).map((building) => (
           <Col xs={24} sm={24} md={12} lg={8} key={building.id}>
             <BuildingCard building={building} />
           </Col>
@@ -128,7 +128,7 @@ function HomePage() {
       </section>
 
       <Row gutter={[16, 16]}>
-        {apartmentsState.data?.slice(0, 6).map((apartment) => (
+        {[...(apartmentsState.data || [])].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)).slice(0, 6).map((apartment) => (
           <Col xs={24} sm={12} lg={8} key={apartment.id}>
             <ApartmentCard apartment={apartment} />
           </Col>
