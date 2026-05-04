@@ -16,17 +16,9 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
-function extractAreaFromAddress(address) {
-  const parts = (address || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  if (parts.length >= 2) {
-    return parts[parts.length - 2];
-  }
-
-  return 'Khac';
+function extractAreaFromBuilding(building) {
+  const region = (building?.region || '').trim();
+  return region || 'Khac';
 }
 
 function isVacantApartment(apartment) {
@@ -169,7 +161,7 @@ function VacantApartmentsPage() {
 
   const areaOptions = useMemo(() => {
     const areas = vacantApartments
-      .map((item) => extractAreaFromAddress(buildingMap.get(String(item.buildingId))?.address))
+      .map((item) => extractAreaFromBuilding(buildingMap.get(String(item.buildingId))))
       .filter(Boolean);
 
     return [...new Set(areas)].sort().map((item) => ({
@@ -202,7 +194,7 @@ function VacantApartmentsPage() {
 
     const filtered = vacantApartments.filter((item) => {
       const building = buildingMap.get(String(item.buildingId));
-      const area = extractAreaFromAddress(building?.address);
+      const area = extractAreaFromBuilding(building);
       const price = item.price?.base || 0;
       const roomArea = item.area || 0;
 
@@ -351,7 +343,7 @@ function VacantApartmentsPage() {
               <Row gutter={[16, 16]}>
                 {filteredApartments.map((apartment) => {
                   const building = buildingMap.get(String(apartment.buildingId));
-                  const area = extractAreaFromAddress(building?.address);
+                  const area = extractAreaFromBuilding(building);
 
                   return (
                     <Col xs={24} sm={12} xl={8} key={apartment.id}>

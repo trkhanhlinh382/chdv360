@@ -44,6 +44,25 @@ function buildGoogleMapsSearchUrl(address) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+function buildResidentBuildingAddress(item) {
+  const baseAddress = (item.fullAddress || item.address || '').trim();
+  const region = (item.location?.name || '').trim();
+
+  if (!region) {
+    return baseAddress || item.name;
+  }
+
+  if (baseAddress && baseAddress.includes(region)) {
+    return baseAddress;
+  }
+
+  if (!baseAddress) {
+    return `Khu vực : ${region}`;
+  }
+
+  return `${baseAddress} - Khu vực : ${region}`;
+}
+
 function buildBuildingAmenities(item) {
   const amenities = [];
 
@@ -99,6 +118,8 @@ function extractBuildingImages(item) {
 }
 
 function mapResidentBuilding(item) {
+  const region = (item.location?.name || '').trim();
+  const address = buildResidentBuildingAddress(item);
   const fees = (item.fees || []).map((f) => ({
     id: f.id,
     name: f.name,
@@ -109,8 +130,9 @@ function mapResidentBuilding(item) {
     id: String(item.id),
     code: item.code,
     name: item.name,
-    address: item.fullAddress,
-    mapsSearchUrl: buildGoogleMapsSearchUrl(item.fullAddress || item.address || item.name),
+    region,
+    address,
+    mapsSearchUrl: buildGoogleMapsSearchUrl(address || item.name),
     images: extractBuildingImages(item),
     fees,
     amenities: fees.length ? fees.map((f) => f.name) : buildBuildingAmenities(item),
