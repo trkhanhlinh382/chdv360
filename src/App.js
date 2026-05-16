@@ -1,6 +1,6 @@
 import { EnvironmentOutlined, MailOutlined, MenuOutlined, PhoneOutlined } from '@ant-design/icons';
 import { Button, ConfigProvider, Drawer, Layout, Menu, Row, Col, Typography } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
 import AboutPage from './pages/AboutPage';
@@ -11,7 +11,7 @@ import ContactPage from './pages/ContactPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import VacantApartmentsPage from './pages/VacantApartmentsPage';
-
+import { api } from './services/api';
 const { Content, Footer, Header } = Layout;
 const { Paragraph, Title } = Typography;
 
@@ -45,6 +45,10 @@ function getSelectedMenuKey(pathname) {
 }
 
 function App() {
+  useEffect(() => {
+    document.title = 'CHDV 360 Plus - Giải pháp tìm phòng trọ thông minh';
+    api.loginResident() // Gọi hàm lấy token khi ứng dụng khởi chạy
+  }, []);
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
