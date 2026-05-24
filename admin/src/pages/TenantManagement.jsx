@@ -1,0 +1,424 @@
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { api } from '../services/api';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
+
+export default function TenantManagement() {
+  const [tenants, setTenants] = useState([]);
+  const [apartments, setApartments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchApartments = async () => {
+    try {
+      const res = await api.getApartments();
+      // Only load vacant apartments for adding new tenants, but allow editing existing ones
+      setApartments(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchTenants = async () => {
+    setLoading(true);
+    try {
+      const res = await api.getTenants();
+      setTenants(res.data);
+    } catch (error) {
+      message.error(error.message || 'Không thể tải danh sách khách thuê');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApartments();
+    fetchTenants();
+  }, []);
+
+  const handleAdd = () => {
+    setEditingId(null);
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const handleEdit = (record) => {
+    setEditingId(record._id);
+    form.setFieldsValue({
+      apartmentId: record.apartmentId?._id || record.apartmentId,
+      name: record.name,
+      phone: record.phone,
+      email: record.email,
+      identityCard: record.identityCard,
+      birthDate: record.birthDate ? dayjs(record.birthDate) : null,
+      gender: record.gender,
+      permanentAddress: record.permanentAddress,
+      occupation: record.occupation,
+      companyOrSchool: record.companyOrSchool,
+      vehicles: record.vehicles || [],
+      coResidents: record.coResidents || [],
+      depositPaid: record.depositPaid,
+      status: record.status
+    });
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.deleteTenant(id);
+      message.success('Đã xóa khách thuê thành công, phòng chuyển sang trạng thái Trống');
+      fetchTenants();
+      fetchApartments();
+    } catch (error) {
+      message.error(error.message || 'Xóa khách thuê thất bại');
+    }
+  };
+
+  const onFinish = async (values) => {
+    const payload = {
+      ...values,
+      birthDate: values.birthDate ? values.birthDate.toDate() : null
+    };
+
+    try {
+      let res;
+      if (editingId) {
+        res = await api.updateTenant(editingId, payload);
+        message.success('Cập nhật thông tin khách thuê thành công');
+      } else {
+        res = await api.createTenant(payload);
+        message.success('Đăng ký khách thuê thành công');
+      }
+
+      if (res.parkingWarning) {
+        Modal.warning({
+          title: 'CẢNH BÁO QUÁ TẢI BÃI GIỮ XE',
+          content: res.parkingWarning,
+          okText: 'Tôi hiểu và tiếp tục'
+        });
+      }
+
+      setModalOpen(false);
+      fetchTenants();
+      fetchApartments();
+    } catch (error) {
+      message.error(error.message || 'Thao tác thất bại');
+    }
+  };
+
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  };
+
+  const columns = [
+    {
+      title: 'Khách thuê (Chính)',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <div>
+          <Text strong style={{ color: '#524636' }}>{text}</Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            <PhoneOutlined /> {record.phone}
+          </Text>
+        </div>
+      )
+    },
+    {
+      title: 'Căn hộ',
+      key: 'apartment',
+      render: (_, record) => {
+        const apt = record.apartmentId;
+        if (!apt) return 'N/A';
+        return `${apt.buildingId?.name || ''} - Phòng ${apt.name || ''}`;
+      }
+    },
+    {
+      title: 'Thông tin cá nhân',
+      key: 'profile',
+      render: (_, record) => (
+        <div style={{ fontSize: 12 }}>
+          • CCCD: {record.identityCard}
+          {record.occupation && <><br />• Nghề: {record.occupation}</>}
+        </div>
+      )
+    },
+    {
+      title: 'Đăng ký xe máy',
+      key: 'vehicles',
+      render: (_, record) => {
+        const vCount = record.vehicles?.length || 0;
+        return (
+          <div>
+            <Badge count={vCount} color={vCount > 0 ? '#bda46a' : '#d9d9d9'}>
+              <Tag icon={<CarOutlined />}>{vCount} xe</Tag>
+            </Badge>
+            {record.vehicles?.map((v, i) => (
+              <div key={i} style={{ fontSize: 11, color: '#82745f', marginTop: 2 }}>
+                - {v.brand} ({v.licensePlate})
+              </div>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      title: 'Người ở cùng',
+      key: 'coResidents',
+      render: (_, record) => {
+        const count = record.coResidents?.length || 0;
+        return (
+          <div>
+            <Tag color={count > 0 ? 'cyan' : 'default'}>{count} thành viên</Tag>
+            {record.coResidents?.map((c, i) => (
+              <div key={i} style={{ fontSize: 11, color: '#82745f' }}>
+                - {c.name} ({c.relationship})
+              </div>
+            ))}
+          </div>
+        );
+      }
+    },
+    {
+      title: 'Tiền cọc đã đóng',
+      dataIndex: 'depositPaid',
+      key: 'depositPaid',
+      render: (d) => formatCurrency(d)
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
+          <Popconfirm
+            title="Xóa khách thuê sẽ giải phóng phòng và tự động xóa hợp đồng liên quan?"
+            onConfirm={() => handleDelete(record._id)}
+            okText="Đồng ý xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
+          </Popconfirm>
+        </Space>
+      )
+    }
+  ];
+
+  return (
+    <Card 
+      title={
+        <Space>
+          <UserOutlined style={{ color: '#bda46a' }} />
+          <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Khách Thuê</Title>
+        </Space>
+      }
+      extra={
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />} 
+          onClick={handleAdd}
+          style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
+        >
+          Đăng ký khách thuê
+        </Button>
+      }
+      style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
+    >
+      <Table 
+        dataSource={tenants} 
+        columns={columns} 
+        rowKey="_id" 
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
+
+      <Modal
+        title={editingId ? 'Cập Nhật Hồ Sơ Khách Thuê' : 'Đăng Ký Hồ Sơ Khách Thuê'}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={() => form.submit()}
+        width={900}
+        destroyOnClose
+      >
+        <Divider style={{ margin: '12px 0' }} />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{
+            gender: 'Nam',
+            vehicles: [],
+            coResidents: [],
+            status: 'Active',
+            depositPaid: 0
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="apartmentId" label="Gán vào căn hộ" rules={[{ required: true, message: 'Chọn căn hộ trống' }]}>
+                <Select placeholder="Chọn căn hộ trống hoặc đã thuê">
+                  {apartments.map(apt => (
+                    <Option key={apt._id} value={apt._id} disabled={apt.status === 'Occupied' && editingId === null}>
+                      {apt.buildingId?.name} - {apt.name} ({apt.status === 'Occupied' ? 'Đang thuê' : 'Còn trống'})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="name" label="Họ tên người đại diện (Ký hợp đồng)" rules={[{ required: true, message: 'Nhập tên khách thuê chính' }]}>
+                <Input placeholder="Nguyễn Văn A" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="phone" label="Số điện thoại liên lạc" rules={[{ required: true, message: 'Nhập số điện thoại' }]}>
+                <Input placeholder="0987654321" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="identityCard" label="Số CCCD / Hộ chiếu" rules={[{ required: true, message: 'Nhập số định danh cá nhân' }]}>
+                <Input placeholder="079096123456" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="email" label="Địa chỉ Email">
+                <Input type="email" placeholder="vananh@gmail.com" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item name="gender" label="Giới tính">
+                <Select>
+                  <Option value="Nam">Nam</Option>
+                  <Option value="Nữ">Nữ</Option>
+                  <Option value="Khác">Khác</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="birthDate" label="Ngày tháng năm sinh">
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" placeholder="Chọn ngày sinh" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="occupation" label="Nghề nghiệp">
+                <Input placeholder="Kỹ sư, học sinh..." />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="depositPaid" label="Tiền cọc thực đóng (VND)" rules={[{ required: true }]}>
+                <InputNumber min={0} style={{ width: '100%' }} formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={value => value.replace(/\$\s?|(,*)/g, '')} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="permanentAddress" label="Địa chỉ thường trú (Hộ khẩu)">
+            <Input placeholder="Số 123 Trần Hưng Đạo, TP Quy Nhơn, Bình Định" />
+          </Form.Item>
+
+          <Row gutter={24}>
+            {/* Vehicles list */}
+            <Col span={12}>
+              <Divider orientation="left" style={{ color: '#bda46a' }}>
+                <CarOutlined /> Đăng Ký Gửi Xe Máy / Ô Tô
+              </Divider>
+              <Form.List name="vehicles">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <div key={key} style={{ background: '#fafaf8', padding: 8, borderRadius: 8, marginBottom: 8, border: '1px solid #f0ecf6' }}>
+                        <Row gutter={8}>
+                          <Col span={8}>
+                            <Form.Item {...restField} name={[name, 'brand']} rules={[{ required: true, message: 'Hiệu xe' }]} style={{ marginBottom: 0 }}>
+                              <Input placeholder="Honda Vision" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={6}>
+                            <Form.Item {...restField} name={[name, 'color']} style={{ marginBottom: 0 }}>
+                              <Input placeholder="Màu đỏ" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={8}>
+                            <Form.Item {...restField} name={[name, 'licensePlate']} rules={[{ required: true, message: 'Biển số' }]} style={{ marginBottom: 0 }}>
+                              <Input placeholder="59-P1 123.45" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={2}>
+                            <Button type="text" danger onClick={() => remove(name)} icon={<DeleteOutlined />} style={{ padding: 0 }} />
+                          </Col>
+                        </Row>
+                      </div>
+                    ))}
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />} size="small">
+                      Đăng ký phương tiện gửi xe
+                    </Button>
+                  </>
+                )}
+              </Form.List>
+            </Col>
+
+            {/* Co-Residents list */}
+            <Col span={12}>
+              <Divider orientation="left" style={{ color: '#bda46a' }}>
+                <UserOutlined /> Thành Viên Sống Cùng (Co-Residents)
+              </Divider>
+              <Form.List name="coResidents">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <div key={key} style={{ background: '#fafaf8', padding: 8, borderRadius: 8, marginBottom: 8, border: '1px solid #f0ecf6' }}>
+                        <Row gutter={8}>
+                          <Col span={8}>
+                            <Form.Item {...restField} name={[name, 'name']} rules={[{ required: true, message: 'Họ tên' }]} style={{ marginBottom: 0 }}>
+                              <Input placeholder="Trần Văn B" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={7}>
+                            <Form.Item {...restField} name={[name, 'phone']} style={{ marginBottom: 0 }}>
+                              <Input placeholder="SĐT phụ" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={7}>
+                            <Form.Item {...restField} name={[name, 'relationship']} rules={[{ required: true, message: 'Quan hệ' }]} style={{ marginBottom: 0 }}>
+                              <Select placeholder="Quan hệ">
+                                <Option value="Bạn">Bạn bè</Option>
+                                <Option value="Vợ">Vợ</Option>
+                                <Option value="Chồng">Chồng</Option>
+                                <Option value="Anh em">Anh chị em</Option>
+                                <Option value="Con">Con cái</Option>
+                                <Option value="Bố mẹ">Bố mẹ</Option>
+                              </Select>
+                            </Form.Item>
+                          </Col>
+                          <Col span={2}>
+                            <Button type="text" danger onClick={() => remove(name)} icon={<DeleteOutlined />} style={{ padding: 0 }} />
+                          </Col>
+                        </Row>
+                      </div>
+                    ))}
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />} size="small">
+                      Thêm thành viên ở cùng phòng
+                    </Button>
+                  </>
+                )}
+              </Form.List>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+    </Card>
+  );
+}

@@ -1,0 +1,81 @@
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #faf9f6;
+  color: #5f5140;
+}
+
+/* Ant Design override styling */
+.ant-layout {
+  background-color: #faf9f6 !important;
+}
+
+.ant-layout-header {
+  border-bottom: 1px solid #f0edf6;
+}
+
+/* Custom cards */
+.ant-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(95, 81, 64, 0.06) !important;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1ebd9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bda46a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9b8451;
+}
+
+/* Login transitions */
+.login-input input::placeholder {
+  color: #82745f !important;
+}
+
+.login-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.login-input:focus-within {
+  border-color: #bda46a !important;
+  box-shadow: 0 0 0 2px rgba(189, 164, 106, 0.2) !important;
+}
+
+/* Print Receipt styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .receipt-view, .receipt-view * {
+    visibility: visible;
+  }
+  .receipt-view {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .ant-btn {
+    display: none !important;
+  }
+}
