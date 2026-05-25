@@ -30,8 +30,8 @@ client.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (window.location.hash !== '#/login') {
+        window.location.href = '/#/login';
       }
     }
     const message = error.response?.data?.message || error.message || 'API request failed';
@@ -52,7 +52,7 @@ export const api = {
   logout: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    window.location.href = '/login';
+    window.location.href = '/#/login';
   },
   getCurrentUser: () => {
     const userStr = localStorage.getItem(USER_KEY);
