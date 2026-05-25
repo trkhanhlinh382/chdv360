@@ -1,11 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload } from 'antd';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
 
 export default function ApartmentManagement() {
   const [apartments, setApartments] = useState([]);
@@ -14,6 +54,7 @@ export default function ApartmentManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
+  const [uploadedImages, setUploadedImages] = useState([]);
 
   const fetchBuildings = async () => {
     try {
@@ -43,12 +84,14 @@ export default function ApartmentManagement() {
 
   const handleAdd = () => {
     setEditingId(null);
+    setUploadedImages([]);
     form.resetFields();
     setModalOpen(true);
   };
 
   const handleEdit = (record) => {
     setEditingId(record._id);
+    setUploadedImages(record.images || []);
     form.setFieldsValue({
       buildingId: record.buildingId?._id || record.buildingId,
       name: record.name,
@@ -77,12 +120,16 @@ export default function ApartmentManagement() {
   };
 
   const onFinish = async (values) => {
+    const payload = {
+      ...values,
+      images: uploadedImages
+    };
     try {
       if (editingId) {
-        await api.updateApartment(editingId, values);
+        await api.updateApartment(editingId, payload);
         message.success('Cập nhật căn hộ thành công');
       } else {
-        await api.createApartment(values);
+        await api.createApartment(payload);
         message.success('Thêm căn hộ mới thành công');
       }
       setModalOpen(false);
@@ -111,7 +158,26 @@ export default function ApartmentManagement() {
     {
       title: 'Tên phòng',
       dataIndex: 'name',
-      key: 'name'
+      key: 'name',
+      render: (text, record) => {
+        const hasImg = record.images && record.images.length > 0;
+        return (
+          <Space>
+            {hasImg ? (
+              <img 
+                src={record.images[0]} 
+                alt="Apartment" 
+                style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid #f0edf6' }} 
+              />
+            ) : (
+              <div style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: '#faf8f5', border: '1px solid #f0edf6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bda46a' }}>
+                <ApartmentOutlined style={{ fontSize: 20 }} />
+              </div>
+            )}
+            <Text>{text}</Text>
+          </Space>
+        );
+      }
     },
     {
       title: 'Tầng',
@@ -324,6 +390,52 @@ export default function ApartmentManagement() {
               <Option value="Khóa vân tay">Khóa vân tay</Option>
               <Option value="Cho phép nuôi thú cưng">Cho phép nuôi thú cưng</Option>
             </Select>
+          </Form.Item>
+
+          <Divider orientation="left" style={{ color: '#bda46a' }}>Hình Ảnh Căn Hộ</Divider>
+
+          <Form.Item label="Tải ảnh căn hộ lên (Tối đa 2MB mỗi ảnh)">
+            <Upload
+              accept="image/*"
+              multiple
+              beforeUpload={async (file) => {
+                try {
+                  const compressed = await compressImage(file);
+                  setUploadedImages(prev => [...prev, compressed]);
+                } catch (error) {
+                  message.error('Lỗi khi xử lý ảnh: ' + error.message);
+                }
+                return false;
+              }}
+              showUploadList={false}
+            >
+              <Button icon={<PlusOutlined />}>Chọn tệp ảnh</Button>
+            </Upload>
+
+            {uploadedImages.length > 0 && (
+              <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
+                {uploadedImages.map((img, index) => (
+                  <Col span={6} key={index}>
+                    <div style={{ position: 'relative', width: '100%', paddingTop: '75%', borderRadius: 8, overflow: 'hidden', border: '1px solid #f0edf6', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                      <img 
+                        src={img} 
+                        alt="Preview" 
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                      <Button
+                        type="primary"
+                        danger
+                        shape="circle"
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
+                        style={{ position: 'absolute', top: 5, right: 5, zIndex: 5, opacity: 0.85 }}
+                      />
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            )}
           </Form.Item>
 
           <Divider orientation="left" style={{ color: '#bda46a' }}>

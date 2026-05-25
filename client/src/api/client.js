@@ -364,10 +364,11 @@ export function shouldUseResidentApi() {
 }
 
 export function shouldUseCustomServer() {
-  return process.env.REACT_APP_USE_CUSTOM_SERVER === 'true';
+  // Always default to true unless explicitly configured as 'false'
+  return process.env.REACT_APP_USE_CUSTOM_SERVER !== 'false';
 }
 
-const CUSTOM_SERVER_URL = process.env.REACT_APP_CUSTOM_SERVER_URL || 'http://localhost:5000/api/public';
+const CUSTOM_SERVER_URL = process.env.REACT_APP_CUSTOM_SERVER_URL || 'https://chdv360-server.vercel.app/api/public';
 
 export async function customServerRequest(path, params = {}) {
   const res = await axios.get(`${CUSTOM_SERVER_URL}${path}`, { params });

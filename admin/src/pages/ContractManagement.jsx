@@ -1,11 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
 
 export default function ContractManagement() {
   const [contracts, setContracts] = useState([]);
@@ -15,6 +55,9 @@ export default function ContractManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
+  const [uploadedAttachments, setUploadedAttachments] = useState([]);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewAttachments, setPreviewAttachments] = useState([]);
 
   // Watch fields for dynamic tenant loading
   const formApartmentId = Form.useWatch('apartmentId', form);
@@ -49,12 +92,14 @@ export default function ContractManagement() {
 
   const handleAdd = () => {
     setEditingId(null);
+    setUploadedAttachments([]);
     form.resetFields();
     setModalOpen(true);
   };
 
   const handleEdit = (record) => {
     setEditingId(record._id);
+    setUploadedAttachments(record.attachments || []);
     form.setFieldsValue({
       apartmentId: record.apartmentId?._id || record.apartmentId,
       tenantId: record.tenantId?._id || record.tenantId,
@@ -85,7 +130,8 @@ export default function ContractManagement() {
     const payload = {
       ...values,
       startDate: values.startDate ? values.startDate.toDate() : null,
-      endDate: values.endDate ? values.endDate.toDate() : null
+      endDate: values.endDate ? values.endDate.toDate() : null,
+      attachments: uploadedAttachments
     };
 
     try {
@@ -189,6 +235,26 @@ export default function ContractManagement() {
           label = 'Đã thanh lý';
         }
         return <Tag color={color}>{label}</Tag>;
+      }
+    },
+    {
+      title: 'Ảnh đính kèm',
+      key: 'attachments',
+      render: (_, record) => {
+        const count = record.attachments?.length || 0;
+        if (count === 0) return <Tag color="default">Không có đính kèm</Tag>;
+        return (
+          <Button 
+            type="link" 
+            onClick={() => {
+              setPreviewAttachments(record.attachments);
+              setPreviewModalOpen(true);
+            }}
+            style={{ padding: 0 }}
+          >
+            Xem {count} bản quét
+          </Button>
+        );
       }
     },
     {
@@ -329,7 +395,97 @@ export default function ContractManagement() {
           <Form.Item name="terms" label="Điều khoản & Thỏa thuận hợp đồng">
             <Input.TextArea rows={4} placeholder="Nhập các điều khoản quy định về đền bù hư hỏng, quy tắc tiếng ồn, vệ sinh..." />
           </Form.Item>
+
+          <Divider orientation="left" style={{ color: '#bda46a' }}>Bản Quét Hợp Đồng / Đính Kèm</Divider>
+
+          <Form.Item label="Tải bản quét/ảnh chụp hợp đồng lên (Tối đa 2MB mỗi ảnh)">
+            <Upload
+              accept="image/*"
+              multiple
+              beforeUpload={async (file) => {
+                try {
+                  const compressed = await compressImage(file);
+                  setUploadedAttachments(prev => [...prev, compressed]);
+                } catch (error) {
+                  message.error('Lỗi khi xử lý ảnh: ' + error.message);
+                }
+                return false;
+              }}
+              showUploadList={false}
+            >
+              <Button icon={<PlusOutlined />}>Tải tệp đính kèm</Button>
+            </Upload>
+
+            {uploadedAttachments.length > 0 && (
+              <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
+                {uploadedAttachments.map((img, index) => (
+                  <Col span={6} key={index}>
+                    <div style={{ position: 'relative', width: '100%', paddingTop: '133%', borderRadius: 8, overflow: 'hidden', border: '1px solid #f0edf6', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                      <img 
+                        src={img} 
+                        alt="Preview scan" 
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
+                      <Button
+                        type="primary"
+                        danger
+                        shape="circle"
+                        icon={<DeleteOutlined />}
+                        size="small"
+                        onClick={() => setUploadedAttachments(prev => prev.filter((_, i) => i !== index))}
+                        style={{ position: 'absolute', top: 5, right: 5, zIndex: 5, opacity: 0.85 }}
+                      />
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            )}
+          </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Contract Scan Slideshow Modal */}
+      <Modal
+        title="Bản Quét Hợp Đồng & Tài Liệu Đính Kèm"
+        open={previewModalOpen}
+        onCancel={() => {
+          setPreviewModalOpen(false);
+          setPreviewAttachments([]);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setPreviewModalOpen(false);
+            setPreviewAttachments([]);
+          }}>
+            Đóng
+          </Button>
+        ]}
+        width={720}
+        destroyOnClose
+      >
+        <Divider style={{ margin: '12px 0' }} />
+        {previewAttachments.length > 0 ? (
+          <Row gutter={[16, 16]} justify="center">
+            {previewAttachments.map((img, index) => (
+              <Col span={24} key={index} style={{ textAlign: 'center' }}>
+                <div style={{ padding: 8, border: '1px solid #f0edf6', borderRadius: 8, backgroundColor: '#faf8f5', marginBottom: 12 }}>
+                  <Text type="secondary" block style={{ marginBottom: 8, fontWeight: 500 }}>
+                    Trang {index + 1}
+                  </Text>
+                  <img 
+                    src={img} 
+                    alt={`Attachment ${index + 1}`} 
+                    style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                  />
+                </div>
+              </Col>
+            ))}
+          </Row>
+        ) : (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <Text type="secondary">Không tìm thấy tài liệu đính kèm nào.</Text>
+          </div>
+        )}
       </Modal>
     </Card>
   );
