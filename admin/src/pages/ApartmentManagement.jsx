@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer } from 'antd';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
