@@ -60,6 +60,12 @@ export default function ApartmentManagement() {
   const [detailsTenant, setDetailsTenant] = useState(null);
   const [detailsContract, setDetailsContract] = useState(null);
 
+  const selectedBuildingId = Form.useWatch('buildingId', form);
+  const selectedBuilding = buildings.find(b => b._id === selectedBuildingId);
+  const buildingAmenities = selectedBuilding?.amenities || [];
+  const defaultRoomAmenities = ["Ban công", "Cửa sổ thoáng", "Máy giặt riêng", "Cực kỳ yên tĩnh", "Khóa vân tay", "Cho phép nuôi thú cưng"];
+  const mergedAmenities = Array.from(new Set([...buildingAmenities, ...defaultRoomAmenities]));
+
   const fetchBuildings = async () => {
     try {
       const res = await api.getBuildings();
@@ -405,14 +411,11 @@ export default function ApartmentManagement() {
             </Col>
           </Row>
 
-          <Form.Item name="amenities" label="Tiện nghi đi kèm (Chọn nhiều)">
+          <Form.Item name="amenities" label="Tiện nghi đi kèm (Chọn sẵn từ Tòa nhà hoặc nhập tự do)">
             <Select mode="tags" style={{ width: '100%' }} placeholder="Chọn hoặc nhập tiện ích phòng">
-              <Option value="Ban công">Ban công</Option>
-              <Option value="Cửa sổ thoáng">Cửa sổ thoáng</Option>
-              <Option value="Máy giặt riêng">Máy giặt riêng</Option>
-              <Option value="Cực kỳ yên tĩnh">Cực kỳ yên tĩnh</Option>
-              <Option value="Khóa vân tay">Khóa vân tay</Option>
-              <Option value="Cho phép nuôi thú cưng">Cho phép nuôi thú cưng</Option>
+              {mergedAmenities.map(amenity => (
+                <Option key={amenity} value={amenity}>{amenity}</Option>
+              ))}
             </Select>
           </Form.Item>
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 
 const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const compressImage = (file) => {
   return new Promise((resolve, reject) => {
@@ -154,7 +155,8 @@ export default function BuildingManagement() {
       electricPrice: record.defaultFees?.electricPrice || 4000,
       waterPrice: record.defaultFees?.waterPrice || 30000,
       serviceFee: record.defaultFees?.serviceFee || 150000,
-      parkingFee: record.defaultFees?.parkingFee || 100000
+      parkingFee: record.defaultFees?.parkingFee || 100000,
+      amenities: record.amenities || []
     });
     setModalOpen(true);
   };
@@ -179,6 +181,7 @@ export default function BuildingManagement() {
       parkingCapacity: values.parkingCapacity,
       description: values.description,
       images: uploadedImages,
+      amenities: values.amenities || [],
       defaultFees: {
         electricPrice: values.electricPrice,
         waterPrice: values.waterPrice,
@@ -389,6 +392,18 @@ export default function BuildingManagement() {
 
           <Form.Item name="description" label="Mô tả chi tiết tòa nhà">
             <Input.TextArea rows={2} placeholder="Nhập tiện ích chung, vị trí, khoảng cách đến trường học/chợ..." />
+          </Form.Item>
+
+          <Form.Item name="amenities" label="Tiện ích & Tiện nghi chung của Tòa nhà (Chọn sẵn hoặc tự gõ rồi Enter)">
+            <Select mode="tags" style={{ width: '100%' }} placeholder="Ví dụ: Thang máy, Bảo vệ 24/7, Giờ giấc tự do...">
+              <Option value="Thang máy">Thang máy</Option>
+              <Option value="Bảo vệ 24/7">Bảo vệ 24/7</Option>
+              <Option value="Camera an ninh">Camera an ninh</Option>
+              <Option value="Internet tốc độ cao">Internet tốc độ cao</Option>
+              <Option value="Giờ giấc tự do">Giờ giấc tự do</Option>
+              <Option value="Không chung chủ">Không chung chủ</Option>
+              <Option value="Hầm để xe rộng">Hầm để xe rộng</Option>
+            </Select>
           </Form.Item>
 
           <Divider orientation="left" style={{ color: '#bda46a' }}>Hình Ảnh Tòa Nhà</Divider>
