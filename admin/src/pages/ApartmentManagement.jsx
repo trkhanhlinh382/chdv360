@@ -70,6 +70,10 @@ export default function ApartmentManagement() {
   const defaultRoomAmenities = ["Ban công", "Cửa sổ thoáng", "Máy giặt riêng", "Cực kỳ yên tĩnh", "Khóa vân tay", "Cho phép nuôi thú cưng"];
   const mergedAmenities = Array.from(new Set([...buildingAmenities, ...defaultRoomAmenities]));
 
+  const buildingApartmentTypes = selectedBuilding?.apartmentTypes || [];
+  const defaultApartmentTypes = ["Studio", "1PN", "2PN", "Duplex"];
+  const mergedApartmentTypes = Array.from(new Set([...buildingApartmentTypes, ...defaultApartmentTypes]));
+
   const fetchBuildings = async () => {
     try {
       const res = await api.getBuildings();
@@ -446,11 +450,10 @@ export default function ApartmentManagement() {
             </Col>
             <Col span={6}>
               <Form.Item name="type" label="Loại phòng" rules={[{ required: true }]}>
-                <Select>
-                  <Option value="Studio">Studio</Option>
-                  <Option value="1PN">1 Phòng Ngủ</Option>
-                  <Option value="2PN">2 Phòng Ngủ</Option>
-                  <Option value="Duplex">Duplex (Gác lửng)</Option>
+                <Select placeholder="Chọn loại phòng">
+                  {mergedApartmentTypes.map(type => (
+                    <Option key={type} value={type}>{type}</Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

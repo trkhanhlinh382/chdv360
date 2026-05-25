@@ -35,6 +35,9 @@ const BuildingSchema = new mongoose.Schema({
   amenities: [{
     type: String
   }],
+  apartmentTypes: [{
+    type: String
+  }],
   defaultFees: {
     electricPrice: {
       type: Number,

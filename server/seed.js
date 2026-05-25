@@ -40,6 +40,8 @@ const seedDB = async () => {
         'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=800&q=80',
         'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80'
       ],
+      amenities: ['Thang máy', 'Bảo vệ 24/7', 'Camera an ninh', 'Internet tốc độ cao', 'Giờ giấc tự do'],
+      apartmentTypes: ['Studio', '1PN', '2PN', 'Duplex'],
       defaultFees: {
         electricPrice: 4000,
         waterPrice: 30000,
@@ -64,6 +66,8 @@ const seedDB = async () => {
       images: [
         'https://images.unsplash.com/photo-1472220625704-91e1462799b2?auto=format&fit=crop&w=800&q=80'
       ],
+      amenities: ['Camera an ninh', 'Internet tốc độ cao', 'Không chung chủ', 'Hầm để xe rộng'],
+      apartmentTypes: ['Studio', '1PN'],
       defaultFees: {
         electricPrice: 3800,
         waterPrice: 25000,

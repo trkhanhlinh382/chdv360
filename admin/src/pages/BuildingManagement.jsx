@@ -159,7 +159,8 @@ export default function BuildingManagement() {
       waterPrice: record.defaultFees?.waterPrice || 30000,
       serviceFee: record.defaultFees?.serviceFee || 150000,
       parkingFee: record.defaultFees?.parkingFee || 100000,
-      amenities: record.amenities || []
+      amenities: record.amenities || [],
+      apartmentTypes: record.apartmentTypes || []
     });
     setModalOpen(true);
   };
@@ -185,6 +186,7 @@ export default function BuildingManagement() {
       description: values.description,
       images: uploadedImages,
       amenities: values.amenities || [],
+      apartmentTypes: values.apartmentTypes || [],
       defaultFees: {
         electricPrice: values.electricPrice,
         waterPrice: values.waterPrice,
@@ -474,6 +476,15 @@ export default function BuildingManagement() {
               <Option value="Giờ giấc tự do">Giờ giấc tự do</Option>
               <Option value="Không chung chủ">Không chung chủ</Option>
               <Option value="Hầm để xe rộng">Hầm để xe rộng</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="apartmentTypes" label="Các loại phòng/căn hộ có trong Tòa nhà (Chọn sẵn hoặc tự gõ rồi Enter)">
+            <Select mode="tags" style={{ width: '100%' }} placeholder="Ví dụ: Studio, 1PN, 2PN, Duplex...">
+              <Option value="Studio">Studio</Option>
+              <Option value="1PN">1PN (1 Phòng ngủ)</Option>
+              <Option value="2PN">2PN (2 Phòng ngủ)</Option>
+              <Option value="Duplex">Duplex (Gác lửng)</Option>
             </Select>
           </Form.Item>
 
