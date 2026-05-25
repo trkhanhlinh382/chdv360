@@ -54,6 +54,12 @@ const TenantSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  identityCardFront: {
+    type: String
+  },
+  identityCardBack: {
+    type: String
+  },
   birthDate: {
     type: Date
   },

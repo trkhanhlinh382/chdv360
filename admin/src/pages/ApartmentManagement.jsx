@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs } from 'antd';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
@@ -55,6 +55,10 @@ export default function ApartmentManagement() {
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [detailsApartment, setDetailsApartment] = useState(null);
+  const [detailsTenant, setDetailsTenant] = useState(null);
+  const [detailsContract, setDetailsContract] = useState(null);
 
   const fetchBuildings = async () => {
     try {
@@ -81,6 +85,25 @@ export default function ApartmentManagement() {
     fetchBuildings();
     fetchApartments();
   }, []);
+
+  const handleViewDetails = async (record) => {
+    setDetailsApartment(record);
+    setDetailsDrawerOpen(true);
+
+    if (record.status === 'Occupied') {
+      try {
+        const tenantRes = await api.getTenants();
+        const activeTenant = tenantRes.data.find(t => (t.apartmentId?._id || t.apartmentId) === record._id);
+        setDetailsTenant(activeTenant || null);
+
+        const contractRes = await api.getContracts();
+        const activeContract = contractRes.data.find(c => (c.apartmentId?._id || c.apartmentId) === record._id);
+        setDetailsContract(activeContract || null);
+      } catch (error) {
+        console.error('Không thể tải thông tin hợp đồng và khách thuê', error);
+      }
+    }
+  };
 
   const handleAdd = () => {
     setEditingId(null);
@@ -244,6 +267,7 @@ export default function ApartmentManagement() {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
+          <Button type="text" icon={<InfoCircleOutlined style={{ color: '#9b8451' }} />} onClick={() => handleViewDetails(record)}>Chi tiết</Button>
           <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
           <Popconfirm
             title="Bạn chắc chắn muốn xóa căn hộ này?"
@@ -495,6 +519,257 @@ export default function ApartmentManagement() {
           </Form.List>
         </Form>
       </Modal>
+
+      {/* Immersive Apartment Details Drawer */}
+      <Drawer
+        title={<Title level={4} style={{ margin: 0, color: '#524636' }}>Chi Tiết Căn Hộ - {detailsApartment?.name}</Title>}
+        placement="right"
+        width={800}
+        onClose={() => {
+          setDetailsDrawerOpen(false);
+          setDetailsApartment(null);
+          setDetailsTenant(null);
+          setDetailsContract(null);
+        }}
+        open={detailsDrawerOpen}
+        destroyOnClose
+      >
+        {detailsApartment && (
+          <Tabs defaultActiveKey="1" style={{ marginTop: -12 }}>
+            <Tabs.TabPane tab="Tổng quan & Tiện nghi" key="1">
+              <Row gutter={[24, 24]}>
+                <Col span={24}>
+                  <div style={{ padding: 8, border: '1px solid #f0edf6', borderRadius: 12, backgroundColor: '#faf8f5' }}>
+                    {detailsApartment.images && detailsApartment.images.length > 0 ? (
+                      <Row gutter={[8, 8]} justify="center">
+                        {detailsApartment.images.map((img, i) => (
+                          <Col span={8} key={i}>
+                            <img 
+                              src={img} 
+                              alt="Room interior" 
+                              style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 8, border: '1px solid #f0edf6', cursor: 'zoom-in' }}
+                              onClick={() => {
+                                Modal.info({
+                                  title: 'Ảnh Căn Hộ',
+                                  width: 600,
+                                  maskClosable: true,
+                                  content: <img src={img} style={{ width: '100%', borderRadius: 8 }} />,
+                                  footer: null
+                                });
+                              }}
+                            />
+                          </Col>
+                        ))}
+                      </Row>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '40px 0', color: '#bda46a' }}>
+                        <ApartmentOutlined style={{ fontSize: 48, display: 'block', margin: '0 auto 12px' }} />
+                        <Text type="secondary">Căn hộ này chưa được tải ảnh lên.</Text>
+                      </div>
+                    )}
+                  </div>
+                </Col>
+
+                <Col span={12}>
+                  <Card title="Thông Tin Căn Hộ" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph><strong>Tên phòng:</strong> {detailsApartment.name}</Paragraph>
+                    <Paragraph><strong>Mã phòng:</strong> <Tag color="gold">{detailsApartment.code}</Tag></Paragraph>
+                    <Paragraph><strong>Tòa nhà:</strong> {detailsApartment.buildingId?.name}</Paragraph>
+                    <Paragraph><strong>Tầng:</strong> {detailsApartment.floor}</Paragraph>
+                    <Paragraph><strong>Loại căn hộ:</strong> {detailsApartment.type}</Paragraph>
+                    <Paragraph><strong>Diện tích:</strong> {detailsApartment.area} m²</Paragraph>
+                    <Paragraph><strong>Sức chứa tối đa:</strong> {detailsApartment.maxTenants} người</Paragraph>
+                    <Paragraph>
+                      <strong>Trạng thái:</strong>{' '}
+                      {detailsApartment.status === 'Occupied' ? (
+                        <Tag color="gold">Đã cho thuê</Tag>
+                      ) : detailsApartment.status === 'Maintenance' ? (
+                        <Tag color="red">Bảo trì</Tag>
+                      ) : (
+                        <Tag color="green">Còn trống</Tag>
+                      )}
+                    </Paragraph>
+                  </Card>
+                </Col>
+
+                <Col span={12}>
+                  <Card title="Giá Thuê & Tiền Cọc" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <Text type="secondary">Đơn Giá Thuê</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 20, color: '#bda46a' }}>{formatCurrency(detailsApartment.price)}</Text><Text type="secondary">/tháng</Text>
+                    </div>
+                    <div>
+                      <Text type="secondary">Tiền Đặt Cọc Phòng</Text>
+                      <br />
+                      <Text strong style={{ fontSize: 18, color: '#524636' }}>{formatCurrency(detailsApartment.deposit)}</Text>
+                    </div>
+                  </Card>
+                </Col>
+
+                <Col span={24}>
+                  <Card title="Tiện Nghi Đi Kèm" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    {detailsApartment.amenities && detailsApartment.amenities.length > 0 ? (
+                      <Space size={[8, 8]} wrap>
+                        {detailsApartment.amenities.map((item, idx) => (
+                          <Tag color="gold" key={idx} style={{ padding: '4px 8px', borderRadius: 4 }}>{item}</Tag>
+                        ))}
+                      </Space>
+                    ) : (
+                      <Text type="secondary" italic>Chưa cấu hình danh sách tiện nghi.</Text>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab="Khách thuê & Hợp đồng" key="2">
+              {detailsApartment.status === 'Occupied' ? (
+                <Row gutter={[16, 16]}>
+                  {detailsTenant ? (
+                    <Col span={12}>
+                      <Card title="Hồ Sơ Khách Thuê (Chính)" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                        <Paragraph><strong>Họ tên:</strong> <Text strong style={{ color: '#524636' }}>{detailsTenant.name}</Text></Paragraph>
+                        <Paragraph><strong>Số điện thoại:</strong> {detailsTenant.phone}</Paragraph>
+                        <Paragraph><strong>Số CCCD:</strong> {detailsTenant.identityCard}</Paragraph>
+                        <Paragraph><strong>Nghề nghiệp:</strong> {detailsTenant.occupation || 'N/A'}</Paragraph>
+                        <Paragraph><strong>Cọc thực đóng:</strong> {formatCurrency(detailsTenant.depositPaid)}</Paragraph>
+                        
+                        {(detailsTenant.identityCardFront || detailsTenant.identityCardBack) && (
+                          <div style={{ marginTop: 12 }}>
+                            <Text strong style={{ display: 'block', marginBottom: 6 }}>Ảnh chụp CCCD:</Text>
+                            <Row gutter={8}>
+                              {detailsTenant.identityCardFront && (
+                                <Col span={12}>
+                                  <img 
+                                    src={detailsTenant.identityCardFront} 
+                                    alt="CCCD Front" 
+                                    style={{ width: '100%', height: 75, objectFit: 'cover', borderRadius: 4, border: '1px solid #f0edf6', cursor: 'pointer' }}
+                                    onClick={() => Modal.info({ title: 'Mặt trước CCCD', content: <img src={detailsTenant.identityCardFront} style={{ width: '100%' }} />, footer: null, maskClosable: true })}
+                                  />
+                                </Col>
+                              )}
+                              {detailsTenant.identityCardBack && (
+                                <Col span={12}>
+                                  <img 
+                                    src={detailsTenant.identityCardBack} 
+                                    alt="CCCD Back" 
+                                    style={{ width: '100%', height: 75, objectFit: 'cover', borderRadius: 4, border: '1px solid #f0edf6', cursor: 'pointer' }}
+                                    onClick={() => Modal.info({ title: 'Mặt sau CCCD', content: <img src={detailsTenant.identityCardBack} style={{ width: '100%' }} />, footer: null, maskClosable: true })}
+                                  />
+                                </Col>
+                              )}
+                            </Row>
+                          </div>
+                        )}
+                      </Card>
+                    </Col>
+                  ) : (
+                    <Col span={12}>
+                      <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                        <Text type="secondary" italic>Không tìm thấy hồ sơ khách thuê chính.</Text>
+                      </Card>
+                    </Col>
+                  )}
+
+                  {detailsContract ? (
+                    <Col span={12}>
+                      <Card title="Hợp Đồng Thuê Căn Hộ" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                        <Paragraph><strong>Số hợp đồng:</strong> <Text strong style={{ color: '#9b8451' }}>{detailsContract.contractNumber}</Text></Paragraph>
+                        <Paragraph><strong>Đơn giá thuê:</strong> {formatCurrency(detailsContract.rentalPrice)}/tháng</Paragraph>
+                        <Paragraph><strong>Tiền cọc:</strong> {formatCurrency(detailsContract.depositAmount)}</Paragraph>
+                        <Paragraph><strong>Chu kỳ đóng:</strong> {detailsContract.paymentCycle} tháng/lần</Paragraph>
+                        <Paragraph><strong>Ngày lập hóa đơn:</strong> Ngày {detailsContract.billingDate} hàng tháng</Paragraph>
+                        <Paragraph><strong>Thời hạn hợp đồng:</strong> Từ {new Date(detailsContract.startDate).toLocaleDateString('vi-VN')} đến {new Date(detailsContract.endDate).toLocaleDateString('vi-VN')}</Paragraph>
+                        
+                        {detailsContract.attachments && detailsContract.attachments.length > 0 && (
+                          <div style={{ marginTop: 12 }}>
+                            <Button 
+                              type="primary" 
+                              ghost 
+                              size="small" 
+                              onClick={() => Modal.info({
+                                title: 'Xem các bản quét hợp đồng',
+                                width: 650,
+                                content: (
+                                  <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                                    {detailsContract.attachments.map((att, idx) => (
+                                      <img key={idx} src={att} alt={`Page ${idx + 1}`} style={{ width: '100%', marginBottom: 12, borderRadius: 4 }} />
+                                    ))}
+                                  </div>
+                                ),
+                                footer: null,
+                                maskClosable: true
+                              })}
+                            >
+                              Xem {detailsContract.attachments.length} trang đính kèm
+                            </Button>
+                          </div>
+                        )}
+                      </Card>
+                    </Col>
+                  ) : (
+                    <Col span={12}>
+                      <Card bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                        <Text type="secondary" italic>Không tìm thấy thông tin hợp đồng hoạt động.</Text>
+                      </Card>
+                    </Col>
+                  )}
+                </Row>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '60px 0', backgroundColor: '#faf8f5', borderRadius: 8, border: '1px solid #f0edf6' }}>
+                  <InfoCircleOutlined style={{ fontSize: 36, color: '#bda46a', marginBottom: 12 }} />
+                  <br />
+                  <Text type="secondary">Căn hộ này đang trống. Hãy đăng ký khách thuê hoặc hợp đồng mới để hiển thị thông tin.</Text>
+                </div>
+              )}
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab={`Kiểm kê nội thất (${detailsApartment.assets?.length || 0})`} key="3">
+              <Table 
+                dataSource={detailsApartment.assets || []}
+                rowKey="_id"
+                pagination={false}
+                columns={[
+                  {
+                    title: 'Tên thiết bị / Nội thất',
+                    dataIndex: 'name',
+                    key: 'name',
+                    render: (text) => <Text strong style={{ color: '#524636' }}>{text}</Text>
+                  },
+                  {
+                    title: 'Mã Serial / Ký hiệu',
+                    dataIndex: 'serialNumber',
+                    key: 'serialNumber',
+                    render: (text) => text || <Text type="secondary" italic>N/A</Text>
+                  },
+                  {
+                    title: 'Trạng thái bàn giao',
+                    dataIndex: 'status',
+                    key: 'status',
+                    render: (status) => {
+                      let color = 'blue';
+                      let label = 'Tốt';
+                      if (status === 'New') {
+                        color = 'green';
+                        label = 'Mới 100%';
+                      } else if (status === 'Degraded') {
+                        color = 'orange';
+                        label = 'Cũ/Hao mòn';
+                      } else if (status === 'Broken') {
+                        color = 'red';
+                        label = 'Đã hỏng';
+                      }
+                      return <Tag color={color}>{label}</Tag>;
+                    }
+                  }
+                ]}
+                locale={{ emptyText: 'Chưa lập danh sách kiểm kê bàn giao nội thất cho phòng này.' }}
+              />
+            </Tabs.TabPane>
+          </Tabs>
+        )}
+      </Drawer>
     </Card>
   );
 }

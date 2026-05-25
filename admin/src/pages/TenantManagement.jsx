@@ -1,11 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
 
 export default function TenantManagement() {
   const [tenants, setTenants] = useState([]);
@@ -14,6 +54,10 @@ export default function TenantManagement() {
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
+  const [uploadedFront, setUploadedFront] = useState(null);
+  const [uploadedBack, setUploadedBack] = useState(null);
+  const [previewFrontModal, setPreviewFrontModal] = useState(null);
+  const [previewBackModal, setPreviewBackModal] = useState(null);
 
   const fetchApartments = async () => {
     try {
@@ -44,12 +88,16 @@ export default function TenantManagement() {
 
   const handleAdd = () => {
     setEditingId(null);
+    setUploadedFront(null);
+    setUploadedBack(null);
     form.resetFields();
     setModalOpen(true);
   };
 
   const handleEdit = (record) => {
     setEditingId(record._id);
+    setUploadedFront(record.identityCardFront || null);
+    setUploadedBack(record.identityCardBack || null);
     form.setFieldsValue({
       apartmentId: record.apartmentId?._id || record.apartmentId,
       name: record.name,
@@ -83,7 +131,9 @@ export default function TenantManagement() {
   const onFinish = async (values) => {
     const payload = {
       ...values,
-      birthDate: values.birthDate ? values.birthDate.toDate() : null
+      birthDate: values.birthDate ? values.birthDate.toDate() : null,
+      identityCardFront: uploadedFront,
+      identityCardBack: uploadedBack
     };
 
     try {
@@ -143,12 +193,30 @@ export default function TenantManagement() {
     {
       title: 'Thông tin cá nhân',
       key: 'profile',
-      render: (_, record) => (
-        <div style={{ fontSize: 12 }}>
-          • CCCD: {record.identityCard}
-          {record.occupation && <><br />• Nghề: {record.occupation}</>}
-        </div>
-      )
+      render: (_, record) => {
+        const hasFront = !!record.identityCardFront;
+        const hasBack = !!record.identityCardBack;
+        return (
+          <div style={{ fontSize: 12 }}>
+            • CCCD: {record.identityCard}
+            {record.occupation && <><br />• Nghề: {record.occupation}</>}
+            {(hasFront || hasBack) && (
+              <div style={{ marginTop: 4, display: 'flex', gap: '8px' }}>
+                {hasFront && (
+                  <Button type="link" size="small" onClick={() => setPreviewFrontModal(record.identityCardFront)} style={{ padding: 0, height: 'auto', fontSize: 11 }}>
+                    Mặt trước
+                  </Button>
+                )}
+                {hasBack && (
+                  <Button type="link" size="small" onClick={() => setPreviewBackModal(record.identityCardBack)} style={{ padding: 0, height: 'auto', fontSize: 11 }}>
+                    Mặt sau
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
     },
     {
       title: 'Đăng ký xe máy',
@@ -329,6 +397,85 @@ export default function TenantManagement() {
             <Input placeholder="Số 123 Trần Hưng Đạo, TP Quy Nhơn, Bình Định" />
           </Form.Item>
 
+          <Divider orientation="left" style={{ color: '#bda46a' }}>Ảnh CCCD Khách Thuê</Divider>
+
+          <Row gutter={16} style={{ marginBottom: 12 }}>
+            <Col span={12}>
+              <Form.Item label="CCCD Mặt trước (Tối đa 2MB)">
+                <Upload
+                  accept="image/*"
+                  beforeUpload={async (file) => {
+                    try {
+                      const compressed = await compressImage(file);
+                      setUploadedFront(compressed);
+                    } catch (error) {
+                      message.error('Lỗi khi nén ảnh: ' + error.message);
+                    }
+                    return false;
+                  }}
+                  showUploadList={false}
+                >
+                  <Button icon={<PlusOutlined />} style={{ width: '100%' }}>Tải ảnh mặt trước</Button>
+                </Upload>
+                {uploadedFront && (
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '63%', marginTop: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #f0edf6', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                    <img 
+                      src={uploadedFront} 
+                      alt="CCCD Front" 
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                    <Button
+                      type="primary"
+                      danger
+                      shape="circle"
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      onClick={() => setUploadedFront(null)}
+                      style={{ position: 'absolute', top: 5, right: 5, zIndex: 5 }}
+                    />
+                  </div>
+                )}
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="CCCD Mặt sau (Tối đa 2MB)">
+                <Upload
+                  accept="image/*"
+                  beforeUpload={async (file) => {
+                    try {
+                      const compressed = await compressImage(file);
+                      setUploadedBack(compressed);
+                    } catch (error) {
+                      message.error('Lỗi khi nén ảnh: ' + error.message);
+                    }
+                    return false;
+                  }}
+                  showUploadList={false}
+                >
+                  <Button icon={<PlusOutlined />} style={{ width: '100%' }}>Tải ảnh mặt sau</Button>
+                </Upload>
+                {uploadedBack && (
+                  <div style={{ position: 'relative', width: '100%', paddingTop: '63%', marginTop: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid #f0edf6', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                    <img 
+                      src={uploadedBack} 
+                      alt="CCCD Back" 
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                    <Button
+                      type="primary"
+                      danger
+                      shape="circle"
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      onClick={() => setUploadedBack(null)}
+                      style={{ position: 'absolute', top: 5, right: 5, zIndex: 5 }}
+                    />
+                  </div>
+                )}
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Row gutter={24}>
             {/* Vehicles list */}
             <Col span={12}>
@@ -418,6 +565,48 @@ export default function TenantManagement() {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      {/* Front CCCD Preview Modal */}
+      <Modal
+        title="Mặt Trước CCCD"
+        open={!!previewFrontModal}
+        onCancel={() => setPreviewFrontModal(null)}
+        footer={[
+          <Button key="close" onClick={() => setPreviewFrontModal(null)}>Đóng</Button>
+        ]}
+        destroyOnClose
+        centered
+        width={550}
+      >
+        <div style={{ textAlign: 'center', padding: 8 }}>
+          <img 
+            src={previewFrontModal} 
+            alt="CCCD Front" 
+            style={{ maxWidth: '100%', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+          />
+        </div>
+      </Modal>
+
+      {/* Back CCCD Preview Modal */}
+      <Modal
+        title="Mặt Sau CCCD"
+        open={!!previewBackModal}
+        onCancel={() => setPreviewBackModal(null)}
+        footer={[
+          <Button key="close" onClick={() => setPreviewBackModal(null)}>Đóng</Button>
+        ]}
+        destroyOnClose
+        centered
+        width={550}
+      >
+        <div style={{ textAlign: 'center', padding: 8 }}>
+          <img 
+            src={previewBackModal} 
+            alt="CCCD Back" 
+            style={{ maxWidth: '100%', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} 
+          />
+        </div>
       </Modal>
     </Card>
   );

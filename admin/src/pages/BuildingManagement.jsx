@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 
@@ -53,6 +53,9 @@ export default function BuildingManagement() {
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [detailsBuilding, setDetailsBuilding] = useState(null);
+  const [detailsApartments, setDetailsApartments] = useState([]);
   const [servicesDrawerOpen, setServicesDrawerOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [serviceForm] = Form.useForm();
@@ -76,6 +79,17 @@ export default function BuildingManagement() {
   const handleManageServices = (record) => {
     setSelectedBuilding(record);
     setServicesDrawerOpen(true);
+  };
+
+  const handleViewDetails = async (record) => {
+    setDetailsBuilding(record);
+    setDetailsDrawerOpen(true);
+    try {
+      const res = await api.getApartments({ buildingId: record._id });
+      setDetailsApartments(res.data);
+    } catch (error) {
+      message.error('Không thể tải danh sách căn hộ của tòa nhà');
+    }
   };
 
   const handleAddService = async (values) => {
@@ -268,9 +282,10 @@ export default function BuildingManagement() {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
+          <Button type="text" icon={<InfoCircleOutlined style={{ color: '#9b8451' }} />} onClick={() => handleViewDetails(record)}>Chi tiết</Button>
           {isAdmin ? (
             <>
-              <Button type="text" icon={<SettingOutlined style={{ color: '#9b8451' }} />} onClick={() => handleManageServices(record)}>Dịch vụ ({record.services?.length || 0})</Button>
+              <Button type="text" icon={<SettingOutlined style={{ color: '#bda46a' }} />} onClick={() => handleManageServices(record)}>Dịch vụ ({record.services?.length || 0})</Button>
               <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
               <Popconfirm
                 title="Bạn có chắc chắn muốn xóa tòa nhà này?"
@@ -522,6 +537,177 @@ export default function BuildingManagement() {
           )}
           locale={{ emptyText: 'Chưa có dịch vụ bổ sung nào. Hãy thêm ở trên!' }}
         />
+      </Drawer>
+
+      {/* Immersive Building Details Drawer */}
+      <Drawer
+        title={<Title level={4} style={{ margin: 0, color: '#524636' }}>Chi Tiết Tòa Nhà - {detailsBuilding?.name}</Title>}
+        placement="right"
+        width={850}
+        onClose={() => {
+          setDetailsDrawerOpen(false);
+          setDetailsBuilding(null);
+          setDetailsApartments([]);
+        }}
+        open={detailsDrawerOpen}
+        destroyOnClose
+      >
+        {detailsBuilding && (
+          <Tabs defaultActiveKey="1" style={{ marginTop: -12 }}>
+            <Tabs.TabPane tab="Tổng quan & Hình ảnh" key="1">
+              <Row gutter={[24, 24]}>
+                <Col span={24}>
+                  <div style={{ padding: 8, border: '1px solid #f0edf6', borderRadius: 12, backgroundColor: '#faf8f5' }}>
+                    {detailsBuilding.images && detailsBuilding.images.length > 0 ? (
+                      <Row gutter={[8, 8]} justify="center">
+                        {detailsBuilding.images.map((img, i) => (
+                          <Col span={8} key={i}>
+                            <img 
+                              src={img} 
+                              alt="Building scan" 
+                              style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 8, border: '1px solid #f0edf6', cursor: 'zoom-in' }}
+                              onClick={() => {
+                                Modal.info({
+                                  title: 'Ảnh Tòa Nhà',
+                                  width: 600,
+                                  maskClosable: true,
+                                  content: <img src={img} style={{ width: '100%', borderRadius: 8 }} />,
+                                  footer: null
+                                });
+                              }}
+                            />
+                          </Col>
+                        ))}
+                      </Row>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '40px 0', color: '#bda46a' }}>
+                        <ShopOutlined style={{ fontSize: 48, display: 'block', margin: '0 auto 12px' }} />
+                        <Text type="secondary">Tòa nhà này chưa được tải ảnh lên.</Text>
+                      </div>
+                    )}
+                  </div>
+                </Col>
+
+                <Col span={14}>
+                  <Card title="Thông Tin Cơ Bản" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph><strong>Mã tòa nhà:</strong> <Tag color="gold">{detailsBuilding.code}</Tag></Paragraph>
+                    <Paragraph><strong>Tên tòa nhà:</strong> <Text strong style={{ color: '#524636' }}>{detailsBuilding.name}</Text></Paragraph>
+                    <Paragraph><strong>Khu vực:</strong> {detailsBuilding.region}</Paragraph>
+                    <Paragraph><strong>Địa chỉ:</strong> {detailsBuilding.address}</Paragraph>
+                    <Paragraph><strong>Số lượng tầng:</strong> {detailsBuilding.numberOfFloors} tầng</Paragraph>
+                    <Paragraph><strong>Sức chứa xe tối đa:</strong> {detailsBuilding.parkingCapacity} xe</Paragraph>
+                    <Paragraph>
+                      <strong>Mô tả chi tiết:</strong>
+                      <br />
+                      <Text type="secondary" italic>{detailsBuilding.description || 'Không có mô tả chi tiết.'}</Text>
+                    </Paragraph>
+                  </Card>
+                </Col>
+
+                <Col span={10}>
+                  <Card title="Biểu Phí Mặc Định" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Giá Điện</Text>
+                        <br />
+                        <Text strong style={{ fontSize: 16, color: '#524636' }}>{formatCurrency(detailsBuilding.defaultFees?.electricPrice)}/kWh</Text>
+                      </div>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Giá Nước</Text>
+                        <br />
+                        <Text strong style={{ fontSize: 16, color: '#524636' }}>{formatCurrency(detailsBuilding.defaultFees?.waterPrice)}/m³</Text>
+                      </div>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Phí dịch vụ mặc định</Text>
+                        <br />
+                        <Text strong style={{ fontSize: 16, color: '#524636' }}>{formatCurrency(detailsBuilding.defaultFees?.serviceFee)}/phòng</Text>
+                      </div>
+                      <div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Phí gửi xe mặc định</Text>
+                        <br />
+                        <Text strong style={{ fontSize: 16, color: '#524636' }}>{formatCurrency(detailsBuilding.defaultFees?.parkingFee)}/xe</Text>
+                      </div>
+                    </div>
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab={`Danh sách phòng (${detailsApartments.length})`} key="2">
+              <Table
+                dataSource={detailsApartments}
+                rowKey="_id"
+                pagination={{ pageSize: 10 }}
+                columns={[
+                  {
+                    title: 'Mã phòng',
+                    dataIndex: 'code',
+                    key: 'code',
+                    render: (text) => <Text strong>{text}</Text>
+                  },
+                  {
+                    title: 'Tên phòng',
+                    dataIndex: 'name',
+                    key: 'name'
+                  },
+                  {
+                    title: 'Tầng',
+                    dataIndex: 'floor',
+                    key: 'floor'
+                  },
+                  {
+                    title: 'Loại / Diện tích',
+                    key: 'type',
+                    render: (_, r) => `${r.type} / ${r.area}m²`
+                  },
+                  {
+                    title: 'Giá thuê',
+                    dataIndex: 'price',
+                    key: 'price',
+                    render: (p) => <Text strong style={{ color: '#bda46a' }}>{formatCurrency(p)}</Text>
+                  },
+                  {
+                    title: 'Trạng thái',
+                    dataIndex: 'status',
+                    key: 'status',
+                    render: (status) => {
+                      let color = 'green';
+                      let label = 'Trống';
+                      if (status === 'Occupied') {
+                        color = 'gold';
+                        label = 'Đã thuê';
+                      } else if (status === 'Maintenance') {
+                        color = 'red';
+                        label = 'Bảo trì';
+                      }
+                      return <Tag color={color}>{label}</Tag>;
+                    }
+                  }
+                ]}
+              />
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab={`Dịch vụ tòa nhà (${detailsBuilding.services?.length || 0})`} key="3">
+              <List
+                dataSource={detailsBuilding.services || []}
+                renderItem={(item) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      title={<Text strong style={{ color: '#524636' }}>{item.name}</Text>}
+                      description={
+                        <Space>
+                          <Tag color="gold">{formatCurrency(item.fee)} / {item.unit}</Tag>
+                          {item.active ? <Tag color="green">Đang kích hoạt</Tag> : <Tag color="gray">Tạm ngưng</Tag>}
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+                locale={{ emptyText: 'Chưa có cấu hình dịch vụ bổ sung nào cho tòa nhà này.' }}
+              />
+            </Tabs.TabPane>
+          </Tabs>
+        )}
       </Drawer>
     </Card>
 
