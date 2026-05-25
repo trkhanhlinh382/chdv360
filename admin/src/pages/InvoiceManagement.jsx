@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Row, Col, Typography, message, Popconfirm, Divider, Tag, Drawer, Statistic, Descriptions, Tooltip, Tabs, Alert, Badge } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, CalculatorOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, PrinterOutlined, AlertOutlined, HistoryOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Row, Col, Typography, message, Popconfirm, Divider, Tag, Drawer, Statistic, Descriptions, Tooltip, Tabs, Alert, Badge, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, DollarOutlined, CalculatorOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, PrinterOutlined, AlertOutlined, HistoryOutlined, DownOutlined } from '@ant-design/icons';
 
 import { api } from '../services/api';
 
@@ -268,21 +268,46 @@ export default function InvoiceManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EyeOutlined style={{ color: '#9b8451' }} />} onClick={() => handleView(record)}>Xem biên nhận</Button>
-          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
-          <Popconfirm
-            title="Bạn chắc chắn muốn xóa hóa đơn này?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-          </Popconfirm>
-        </Space>
-      )
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'view',
+            label: 'Xem biên nhận',
+            icon: <EyeOutlined style={{ color: '#9b8451' }} />,
+            onClick: () => handleView(record)
+          },
+          {
+            key: 'edit',
+            label: 'Chỉnh sửa',
+            icon: <EditOutlined style={{ color: '#bda46a' }} />,
+            onClick: () => handleEdit(record)
+          },
+          {
+            key: 'delete',
+            label: 'Xóa hóa đơn',
+            danger: true,
+            icon: <DeleteOutlined />,
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa hóa đơn',
+                content: 'Bạn chắc chắn muốn xóa hóa đơn này?',
+                okText: 'Xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDelete(record._id)
+              });
+            }
+          }
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
+        );
+      }
     }
   ];
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
@@ -260,20 +260,40 @@ export default function ContractManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
-          <Popconfirm
-            title="Bạn chắc chắn muốn xóa hợp đồng thuê này?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-          </Popconfirm>
-        </Space>
-      )
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'edit',
+            label: 'Chỉnh sửa',
+            icon: <EditOutlined style={{ color: '#bda46a' }} />,
+            onClick: () => handleEdit(record)
+          },
+          {
+            key: 'delete',
+            label: 'Xóa hợp đồng',
+            danger: true,
+            icon: <DeleteOutlined />,
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa hợp đồng thuê',
+                content: 'Bạn chắc chắn muốn xóa hợp đồng thuê này?',
+                okText: 'Xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDelete(record._id)
+              });
+            }
+          }
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
+        );
+      }
     }
   ];
 

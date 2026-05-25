@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined, DownOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 
@@ -283,30 +283,57 @@ export default function BuildingManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<InfoCircleOutlined style={{ color: '#9b8451' }} />} onClick={() => handleViewDetails(record)}>Chi tiết</Button>
-          {isAdmin ? (
-            <>
-              <Button type="text" icon={<SettingOutlined style={{ color: '#bda46a' }} />} onClick={() => handleManageServices(record)}>Dịch vụ ({record.services?.length || 0})</Button>
-              <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
-              <Popconfirm
-                title="Bạn có chắc chắn muốn xóa tòa nhà này?"
-                description="Tất cả các phòng liên quan phải được xóa sạch trước."
-                onConfirm={() => handleDelete(record._id)}
-                okText="Xóa"
-                cancelText="Hủy"
-                okButtonProps={{ danger: true }}
-              >
-                <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-              </Popconfirm>
-            </>
-          ) : (
-            <Text type="secondary" italic>Chỉ đọc</Text>
-          )}
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'detail',
+            label: 'Chi tiết',
+            icon: <InfoCircleOutlined style={{ color: '#9b8451' }} />,
+            onClick: () => handleViewDetails(record)
+          }
+        ];
 
-        </Space>
-      )
+        if (isAdmin) {
+          items.push(
+            {
+              key: 'services',
+              label: `Dịch vụ (${record.services?.length || 0})`,
+              icon: <SettingOutlined style={{ color: '#bda46a' }} />,
+              onClick: () => handleManageServices(record)
+            },
+            {
+              key: 'edit',
+              label: 'Chỉnh sửa',
+              icon: <EditOutlined style={{ color: '#bda46a' }} />,
+              onClick: () => handleEdit(record)
+            },
+            {
+              key: 'delete',
+              label: 'Xóa tòa nhà',
+              danger: true,
+              icon: <DeleteOutlined />,
+              onClick: () => {
+                Modal.confirm({
+                  title: 'Xác nhận xóa tòa nhà',
+                  content: 'Bạn có chắc chắn muốn xóa tòa nhà này? Tất cả các phòng liên quan phải được xóa sạch trước.',
+                  okText: 'Xóa',
+                  okType: 'danger',
+                  cancelText: 'Hủy',
+                  onOk: () => handleDelete(record._id)
+                });
+              }
+            }
+          );
+        }
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
+        );
+      }
     }
   ];
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined, DownOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
@@ -263,20 +263,40 @@ export default function TenantManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
-          <Popconfirm
-            title="Xóa khách thuê sẽ giải phóng phòng và tự động xóa hợp đồng liên quan?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Đồng ý xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-          </Popconfirm>
-        </Space>
-      )
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'edit',
+            label: 'Chỉnh sửa',
+            icon: <EditOutlined style={{ color: '#bda46a' }} />,
+            onClick: () => handleEdit(record)
+          },
+          {
+            key: 'delete',
+            label: 'Xóa khách thuê',
+            danger: true,
+            icon: <DeleteOutlined />,
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa khách thuê',
+                content: 'Xóa khách thuê sẽ giải phóng phòng và tự động xóa hợp đồng liên quan?',
+                okText: 'Đồng ý xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDelete(record._id)
+              });
+            }
+          }
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
+        );
+      }
     }
   ];
 

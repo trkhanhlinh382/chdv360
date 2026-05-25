@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer, Dropdown } from 'antd';
 
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined, DownOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -271,24 +271,47 @@ export default function ApartmentManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<InfoCircleOutlined style={{ color: '#9b8451' }} />} onClick={() => handleViewDetails(record)}>Chi tiết</Button>
-          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa</Button>
-          <Popconfirm
-            title="Bạn chắc chắn muốn xóa căn hộ này?"
-            onConfirm={() => handleDelete(record._id)}
-            disabled={record.status === 'Occupied'}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger disabled={record.status === 'Occupied'} icon={<DeleteOutlined />}>
-              Xóa
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'detail',
+            label: 'Chi tiết',
+            icon: <InfoCircleOutlined style={{ color: '#9b8451' }} />,
+            onClick: () => handleViewDetails(record)
+          },
+          {
+            key: 'edit',
+            label: 'Chỉnh sửa',
+            icon: <EditOutlined style={{ color: '#bda46a' }} />,
+            onClick: () => handleEdit(record)
+          },
+          {
+            key: 'delete',
+            label: 'Xóa căn hộ',
+            danger: true,
+            icon: <DeleteOutlined />,
+            disabled: record.status === 'Occupied',
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa căn hộ',
+                content: 'Bạn chắc chắn muốn xóa căn hộ này?',
+                okText: 'Xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDelete(record._id)
+              });
+            }
+          }
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
             </Button>
-          </Popconfirm>
-        </Space>
-      )
+          </Dropdown>
+        );
+      }
     }
   ];
 

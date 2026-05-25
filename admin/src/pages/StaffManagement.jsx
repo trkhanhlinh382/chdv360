@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, Select, Tag, Typography, message, Popconfirm, Divider, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserSwitchOutlined, SafetyOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, Select, Tag, Typography, message, Popconfirm, Divider, Row, Col, Dropdown } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserSwitchOutlined, SafetyOutlined, DownOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 const { Title, Text } = Typography;
@@ -141,20 +141,40 @@ export default function StaffManagement() {
     {
       title: 'Hành động',
       key: 'action',
-      render: (_, record) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined style={{ color: '#bda46a' }} />} onClick={() => handleEdit(record)}>Sửa / Đổi mật khẩu</Button>
-          <Popconfirm
-            title="Bạn có chắc chắn muốn xóa tài khoản nhân viên này?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" danger icon={<DeleteOutlined />}>Xóa</Button>
-          </Popconfirm>
-        </Space>
-      )
+      render: (_, record) => {
+        const items = [
+          {
+            key: 'edit',
+            label: 'Sửa / Đổi mật khẩu',
+            icon: <EditOutlined style={{ color: '#bda46a' }} />,
+            onClick: () => handleEdit(record)
+          },
+          {
+            key: 'delete',
+            label: 'Xóa tài khoản',
+            danger: true,
+            icon: <DeleteOutlined />,
+            onClick: () => {
+              Modal.confirm({
+                title: 'Xác nhận xóa tài khoản nhân viên',
+                content: 'Bạn có chắc chắn muốn xóa tài khoản nhân viên này?',
+                okText: 'Xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDelete(record._id)
+              });
+            }
+          }
+        ];
+
+        return (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button type="primary" size="small" style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none', borderRadius: 6 }}>
+              Thao tác <DownOutlined style={{ fontSize: 10 }} />
+            </Button>
+          </Dropdown>
+        );
+      }
     }
   ];
 
