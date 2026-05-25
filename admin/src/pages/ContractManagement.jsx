@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
@@ -58,6 +58,9 @@ export default function ContractManagement() {
   const [uploadedAttachments, setUploadedAttachments] = useState([]);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewAttachments, setPreviewAttachments] = useState([]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   // Watch fields for dynamic tenant loading
   const formApartmentId = Form.useWatch('apartmentId', form);
@@ -297,6 +300,23 @@ export default function ContractManagement() {
     }
   ];
 
+  const filteredContracts = contracts.filter(c => {
+    const matchesSearch = 
+      !searchQuery ||
+      c.contractNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.tenantId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.apartmentId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.apartmentId?.code?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isExpired = new Date(c.endDate) <= new Date();
+    const matchesStatus = 
+      filterStatus === 'all' || 
+      (filterStatus === 'active' && !isExpired) || 
+      (filterStatus === 'expired' && isExpired);
+    
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <Card 
       title={
@@ -317,8 +337,33 @@ export default function ContractManagement() {
       }
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >
+      <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={16}>
+            <Input 
+              placeholder="Tìm theo số HĐ, tên khách, hoặc phòng..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              allowClear
+              prefix={<SearchOutlined style={{ color: '#82745f' }} />}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              value={filterStatus} 
+              onChange={setFilterStatus}
+            >
+              <Option value="all">Tất cả Trạng thái</Option>
+              <Option value="active">Còn hiệu lực</Option>
+              <Option value="expired">Hết hiệu lực</Option>
+            </Select>
+          </Col>
+        </Row>
+      </div>
+
       <Table 
-        dataSource={contracts} 
+        dataSource={filteredContracts} 
         columns={columns} 
         rowKey="_id" 
         loading={loading}

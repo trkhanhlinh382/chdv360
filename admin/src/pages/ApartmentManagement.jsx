@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer, Dropdown } from 'antd';
 
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 const { Title, Text, Paragraph } = Typography;
@@ -59,6 +59,10 @@ export default function ApartmentManagement() {
   const [detailsApartment, setDetailsApartment] = useState(null);
   const [detailsTenant, setDetailsTenant] = useState(null);
   const [detailsContract, setDetailsContract] = useState(null);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterBuilding, setFilterBuilding] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const selectedBuildingId = Form.useWatch('buildingId', form);
   const selectedBuilding = buildings.find(b => b._id === selectedBuildingId);
@@ -322,6 +326,18 @@ export default function ApartmentManagement() {
     { value: 'Broken', label: 'Hỏng' }
   ];
 
+  const filteredApartments = apartments.filter(apt => {
+    const matchesSearch = 
+      !searchQuery ||
+      apt.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      apt.code?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesBuilding = filterBuilding === 'all' || (apt.buildingId?._id || apt.buildingId) === filterBuilding;
+    const matchesStatus = filterStatus === 'all' || apt.status === filterStatus;
+    
+    return matchesSearch && matchesBuilding && matchesStatus;
+  });
+
   return (
     <Card 
       title={
@@ -333,8 +349,46 @@ export default function ApartmentManagement() {
       extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}>Thêm căn hộ</Button>}
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >
+      <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={8}>
+            <Input 
+              placeholder="Tìm theo tên hoặc mã phòng..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              allowClear
+              prefix={<SearchOutlined style={{ color: '#82745f' }} />}
+            />
+          </Col>
+          <Col xs={12} md={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              value={filterBuilding} 
+              onChange={setFilterBuilding}
+            >
+              <Option value="all">Tất cả Tòa nhà</Option>
+              {buildings.map(b => (
+                <Option key={b._id} value={b._id}>{b.name}</Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={12} md={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              value={filterStatus} 
+              onChange={setFilterStatus}
+            >
+              <Option value="all">Tất cả Trạng thái</Option>
+              <Option value="Vacant">Trống</Option>
+              <Option value="Occupied">Đã thuê</Option>
+              <Option value="Maintenance">Bảo trì</Option>
+            </Select>
+          </Col>
+        </Row>
+      </div>
+
       <Table 
-        dataSource={apartments} 
+        dataSource={filteredApartments} 
         columns={columns} 
         rowKey="_id" 
         loading={loading}

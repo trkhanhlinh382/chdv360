@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
 
 
@@ -60,6 +60,9 @@ export default function BuildingManagement() {
   const [servicesDrawerOpen, setServicesDrawerOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [serviceForm] = Form.useForm();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterRegion, setFilterRegion] = useState('all');
   
   const currentUser = api.getCurrentUser();
 
@@ -337,6 +340,21 @@ export default function BuildingManagement() {
     }
   ];
 
+  const uniqueRegions = Array.from(new Set(buildings.map(b => b.region).filter(Boolean)));
+
+  const filteredBuildings = buildings.filter(b => {
+    const matchesSearch = 
+      !searchQuery ||
+      b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.region?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesRegion = filterRegion === 'all' || b.region === filterRegion;
+    
+    return matchesSearch && matchesRegion;
+  });
+
   return (
     <Card 
       title={
@@ -348,8 +366,34 @@ export default function BuildingManagement() {
       extra={isAdmin && <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}>Thêm tòa nhà</Button>}
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >
+      <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={16}>
+            <Input 
+              placeholder="Tìm theo tên, mã, địa chỉ hoặc khu vực..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              allowClear
+              prefix={<SearchOutlined style={{ color: '#82745f' }} />}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              value={filterRegion} 
+              onChange={setFilterRegion}
+            >
+              <Option value="all">Tất cả Khu vực</Option>
+              {uniqueRegions.map(r => (
+                <Option key={r} value={r}>{r}</Option>
+              ))}
+            </Select>
+          </Col>
+        </Row>
+      </div>
+
       <Table 
-        dataSource={buildings} 
+        dataSource={filteredBuildings} 
         columns={columns} 
         rowKey="_id" 
         loading={loading}

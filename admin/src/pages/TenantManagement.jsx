@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined, DownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
@@ -59,6 +59,19 @@ export default function TenantManagement() {
   const [previewFrontModal, setPreviewFrontModal] = useState(null);
   const [previewBackModal, setPreviewBackModal] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterBuilding, setFilterBuilding] = useState('all');
+  const [buildings, setBuildings] = useState([]);
+
+  const fetchBuildings = async () => {
+    try {
+      const res = await api.getBuildings();
+      setBuildings(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const fetchApartments = async () => {
     try {
       const res = await api.getApartments();
@@ -82,6 +95,7 @@ export default function TenantManagement() {
   };
 
   useEffect(() => {
+    fetchBuildings();
     fetchApartments();
     fetchTenants();
   }, []);
@@ -300,6 +314,19 @@ export default function TenantManagement() {
     }
   ];
 
+  const filteredTenants = tenants.filter(t => {
+    const matchesSearch = 
+      !searchQuery ||
+      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.identityCard?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const buildingIdOfTenant = t.apartmentId?.buildingId?._id || t.apartmentId?.buildingId || '';
+    const matchesBuilding = filterBuilding === 'all' || buildingIdOfTenant.toString() === filterBuilding.toString();
+    
+    return matchesSearch && matchesBuilding;
+  });
+
   return (
     <Card 
       title={
@@ -320,8 +347,34 @@ export default function TenantManagement() {
       }
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >
+      <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={16}>
+            <Input 
+              placeholder="Tìm theo tên khách, SĐT hoặc số CCCD..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              allowClear
+              prefix={<SearchOutlined style={{ color: '#82745f' }} />}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              value={filterBuilding} 
+              onChange={setFilterBuilding}
+            >
+              <Option value="all">Tất cả Tòa nhà</Option>
+              {buildings.map(b => (
+                <Option key={b._id} value={b._id}>{b.name}</Option>
+              ))}
+            </Select>
+          </Col>
+        </Row>
+      </div>
+
       <Table 
-        dataSource={tenants} 
+        dataSource={filteredTenants} 
         columns={columns} 
         rowKey="_id" 
         loading={loading}
