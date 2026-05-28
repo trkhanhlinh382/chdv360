@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Typography, message, Popconfirm, Divider, Badge, Row, Col, Drawer, List, Tag, Upload, Tabs, Select, Dropdown, Statistic } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined, EnvironmentOutlined, SettingOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined, ApartmentOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 
 const { Title, Text, Paragraph } = Typography;
@@ -48,7 +49,10 @@ const compressImage = (file) => {
 };
 
 export default function BuildingManagement() {
+  const navigate = useNavigate();
   const [buildings, setBuildings] = useState([]);
+  const [apartments, setApartments] = useState([]);
+  const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -61,22 +65,38 @@ export default function BuildingManagement() {
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [serviceForm] = Form.useForm();
 
+  const [searchParams] = useSearchParams();
+  const paramRegion = searchParams.get('region');
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterRegion, setFilterRegion] = useState('all');
+  const [filterRegion, setFilterRegion] = useState(paramRegion || 'all');
   
   const currentUser = api.getCurrentUser();
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const fetchBuildings = async () => {
+  const fetchAllData = async () => {
     setLoading(true);
+    try {
+      const bRes = await api.getBuildings();
+      setBuildings(bRes.data);
+      const aRes = await api.getApartments();
+      setApartments(aRes.data);
+      const tRes = await api.getTenants();
+      setTenants(tRes.data);
+    } catch (error) {
+      message.error(error.message || 'Không thể tải toàn bộ dữ liệu quản trị');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchBuildings = async () => {
     try {
       const res = await api.getBuildings();
       setBuildings(res.data);
     } catch (error) {
-      message.error(error.message || 'Không thể tải danh sách tòa nhà');
-    } finally {
-      setLoading(false);
+      console.error(error);
     }
   };
 
@@ -134,8 +154,14 @@ export default function BuildingManagement() {
 
 
   useEffect(() => {
-    fetchBuildings();
+    fetchAllData();
   }, []);
+
+  useEffect(() => {
+    if (paramRegion) {
+      setFilterRegion(paramRegion);
+    }
+  }, [paramRegion]);
 
   const handleAdd = () => {
     setEditingId(null);
@@ -240,7 +266,13 @@ export default function BuildingManagement() {
                 <ShopOutlined style={{ fontSize: 20 }} />
               </div>
             )}
-            <Text style={{ color: '#524636', fontWeight: 600 }}>{text}</Text>
+            <Button 
+              type="link" 
+              onClick={() => navigate(`/apartments?buildingId=${record._id}`)} 
+              style={{ padding: 0, height: 'auto', fontWeight: 600, color: '#9b8451', textAlign: 'left' }}
+            >
+              {text}
+            </Button>
           </Space>
         );
       }
@@ -266,24 +298,18 @@ export default function BuildingManagement() {
     },
     {
       title: 'Bãi giữ xe',
-      dataIndex: 'parkingCapacity',
-      key: 'parkingCapacity',
-      render: (cap) => `${cap} xe`
-    },
-    {
-      title: 'Biểu phí mặc định',
-      key: 'fees',
-      render: (_, record) => (
-        <div style={{ fontSize: 12 }}>
-          • Điện: {formatCurrency(record.defaultFees?.electricPrice)}/kWh
-          <br />
-          • Nước: {formatCurrency(record.defaultFees?.waterPrice)}/m³
-          <br />
-          • Phí DV: {formatCurrency(record.defaultFees?.serviceFee)}/phòng
-          <br />
-          • Phí xe: {formatCurrency(record.defaultFees?.parkingFee)}/xe
-        </div>
-      )
+      key: 'parkingStatus',
+      render: (_, record) => {
+        const bApartments = apartments.filter(apt => (apt.buildingId?._id || apt.buildingId) === record._id);
+        const bTenants = tenants.filter(t => t.status === 'Active' && bApartments.some(apt => apt._id === (t.apartmentId?._id || t.apartmentId)));
+        const currentVehicles = bTenants.reduce((sum, t) => sum + (t.vehicles?.length || 0), 0);
+        return (
+          <Badge 
+            status={currentVehicles > record.parkingCapacity ? 'error' : currentVehicles >= record.parkingCapacity * 0.8 ? 'warning' : 'success'} 
+            text={`${currentVehicles} / ${record.parkingCapacity} xe`} 
+          />
+        );
+      }
     },
     {
       title: 'Hành động',
@@ -357,17 +383,67 @@ export default function BuildingManagement() {
     return matchesSearch && matchesRegion;
   });
 
+  const regionStats = uniqueRegions.map(reg => {
+    const regBuildings = buildings.filter(b => b.region === reg);
+    const regApartments = apartments.filter(apt => regBuildings.some(rb => rb._id === (apt.buildingId?._id || apt.buildingId)));
+    return {
+      region: reg,
+      buildingCount: regBuildings.length,
+      apartmentCount: regApartments.length
+    };
+  });
+
+  const activeBuildings = buildings.filter(b => b.active !== false).length;
+  const inactiveBuildings = buildings.filter(b => b.active === false).length;
+
   return (
-    <Card 
-      title={
-        <Space>
-          <ShopOutlined style={{ color: '#bda46a' }} />
-          <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Tòa Nhà</Title>
-        </Space>
-      }
-      extra={isAdmin && <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}>Thêm tòa nhà</Button>}
-      style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
-    >
+    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      {/* 4. Thống kê tổng quan */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Tổng số Khu Vực" 
+              value={uniqueRegions.length} 
+              valueStyle={{ color: '#bda46a', fontWeight: 700 }}
+              prefix={<EnvironmentOutlined style={{ color: '#bda46a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Tổng Tòa Nhà (Đang h.động / Ngưng h.động)" 
+              value={buildings.length} 
+              suffix={`(${activeBuildings} / ${inactiveBuildings})`}
+              valueStyle={{ color: '#524636', fontWeight: 700 }}
+              prefix={<ShopOutlined style={{ color: '#9b8451' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Tổng số Căn Hộ" 
+              value={apartments.length} 
+              valueStyle={{ color: '#52c41a', fontWeight: 700 }}
+              prefix={<ApartmentOutlined style={{ color: '#52c41a' }} />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+
+      <Card 
+        title={
+          <Space>
+            <ShopOutlined style={{ color: '#bda46a' }} />
+            <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Tòa Nhà</Title>
+          </Space>
+        }
+        extra={isAdmin && <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}>Thêm tòa nhà</Button>}
+        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
+      >
       <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={16}>
@@ -807,6 +883,6 @@ export default function BuildingManagement() {
         )}
       </Drawer>
     </Card>
-
+    </Space>
   );
 }

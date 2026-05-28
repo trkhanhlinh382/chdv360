@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload, Dropdown } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload, Dropdown, Tabs, Descriptions, Drawer } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined, SearchOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 const compressImage = (file) => {
@@ -60,6 +60,8 @@ export default function ContractManagement() {
   const [uploadedAttachments, setUploadedAttachments] = useState([]);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewAttachments, setPreviewAttachments] = useState([]);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [detailsContract, setDetailsContract] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -100,6 +102,11 @@ export default function ContractManagement() {
     setUploadedAttachments([]);
     form.resetFields();
     setModalOpen(true);
+  };
+
+  const handleViewDetails = (record) => {
+    setDetailsContract(record);
+    setDetailsDrawerOpen(true);
   };
 
   const handleEdit = (record) => {
@@ -243,30 +250,16 @@ export default function ContractManagement() {
       }
     },
     {
-      title: 'Ảnh đính kèm',
-      key: 'attachments',
-      render: (_, record) => {
-        const count = record.attachments?.length || 0;
-        if (count === 0) return <Tag color="default">Không có đính kèm</Tag>;
-        return (
-          <Button 
-            type="link" 
-            onClick={() => {
-              setPreviewAttachments(record.attachments);
-              setPreviewModalOpen(true);
-            }}
-            style={{ padding: 0 }}
-          >
-            Xem {count} bản quét
-          </Button>
-        );
-      }
-    },
-    {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => {
         const items = [
+          {
+            key: 'detail',
+            label: 'Chi tiết',
+            icon: <InfoCircleOutlined style={{ color: '#9b8451' }} />,
+            onClick: () => handleViewDetails(record)
+          },
           {
             key: 'edit',
             label: 'Chỉnh sửa',
@@ -564,6 +557,125 @@ export default function ContractManagement() {
           </div>
         )}
       </Modal>
+
+      {/* Immersive Contract Details Drawer */}
+      <Drawer
+        title={<Title level={4} style={{ margin: 0, color: '#524636' }}>Chi Tiết Hợp Đồng - {detailsContract?.contractNumber}</Title>}
+        placement="right"
+        width={800}
+        onClose={() => {
+          setDetailsDrawerOpen(false);
+          setDetailsContract(null);
+        }}
+        open={detailsDrawerOpen}
+        destroyOnClose
+      >
+        {detailsContract && (
+          <Tabs defaultActiveKey="1" style={{ marginTop: -12 }}>
+            <Tabs.TabPane tab="Điều khoản & Thanh toán" key="1">
+              <Row gutter={[24, 24]}>
+                <Col span={14}>
+                  <Card title="Thông Tin Tài Chính & Thời Hạn" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph><strong>Mã số Hợp đồng:</strong> <Text strong style={{ color: '#9b8451' }}>{detailsContract.contractNumber}</Text></Paragraph>
+                    <Paragraph>
+                      <strong>Đơn giá thuê:</strong>{' '}
+                      <Text type="danger" strong style={{ fontSize: 16 }}>{formatCurrency(detailsContract.rentalPrice)}/tháng</Text>
+                    </Paragraph>
+                    <Paragraph>
+                      <strong>Tiền đặt cọc:</strong>{' '}
+                      <Text type="warning" strong>{formatCurrency(detailsContract.depositAmount)}</Text>
+                    </Paragraph>
+                    <Paragraph><strong>Chu kỳ đóng tiền:</strong> {detailsContract.paymentCycle} tháng/lần</Paragraph>
+                    <Paragraph><strong>Ngày chốt hoá đơn:</strong> Ngày {detailsContract.billingDate || 5} hàng tháng</Paragraph>
+                    <Paragraph><strong>Ngày bắt đầu hiệu lực:</strong> {new Date(detailsContract.startDate).toLocaleDateString('vi-VN')}</Paragraph>
+                    <Paragraph><strong>Ngày kết thúc hiệu lực:</strong> {new Date(detailsContract.endDate).toLocaleDateString('vi-VN')}</Paragraph>
+                  </Card>
+                </Col>
+                <Col span={10}>
+                  <Card title="Trạng Thái Vận Hành" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph>
+                      <strong>Trạng thái hợp đồng:</strong>{' '}
+                      {detailsContract.status === 'Active' ? (
+                        <Tag color="green">Đang hiệu lực</Tag>
+                      ) : detailsContract.status === 'Expired' ? (
+                        <Tag color="orange">Đã hết hạn</Tag>
+                      ) : (
+                        <Tag color="red">Đã thanh lý</Tag>
+                      )}
+                    </Paragraph>
+                    <Paragraph><strong>Ngày lập hồ sơ:</strong> {new Date(detailsContract.createdAt || Date.now()).toLocaleDateString('vi-VN')}</Paragraph>
+                  </Card>
+                </Col>
+
+                <Col span={24}>
+                  <Card title="Điều Khoản & Quy Định Thỏa Thuận" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph style={{ whiteSpace: 'pre-line', fontStyle: 'italic', color: '#5f5140' }}>
+                      {detailsContract.terms || 'Không có ghi chú điều khoản đặc biệt nào.'}
+                    </Paragraph>
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab="Khách thuê & Căn hộ" key="2">
+              <Row gutter={[24, 24]}>
+                <Col span={12}>
+                  <Card title="Đại Diện Khách Thuê" size="small">
+                    {detailsContract.tenantId ? (
+                      <Descriptions column={1} bordered>
+                        <Descriptions.Item label="Họ tên">{detailsContract.tenantId.name}</Descriptions.Item>
+                        <Descriptions.Item label="Số điện thoại">{detailsContract.tenantId.phone}</Descriptions.Item>
+                        <Descriptions.Item label="Số CCCD">{detailsContract.tenantId.identityCard}</Descriptions.Item>
+                      </Descriptions>
+                    ) : (
+                      <Text type="secondary">N/A (Chưa liên kết hồ sơ khách thuê)</Text>
+                    )}
+                  </Card>
+                </Col>
+                <Col span={12}>
+                  <Card title="Căn Hộ Thuê" size="small">
+                    {detailsContract.apartmentId ? (
+                      <Descriptions column={1} bordered>
+                        <Descriptions.Item label="Tòa nhà">{detailsContract.apartmentId.buildingId?.name}</Descriptions.Item>
+                        <Descriptions.Item label="Mã phòng">{detailsContract.apartmentId.code}</Descriptions.Item>
+                        <Descriptions.Item label="Tên phòng">Phòng {detailsContract.apartmentId.name}</Descriptions.Item>
+                        <Descriptions.Item label="Tầng">{detailsContract.apartmentId.floor}</Descriptions.Item>
+                      </Descriptions>
+                    ) : (
+                      <Text type="secondary">N/A (Chưa liên kết căn hộ)</Text>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab={`Tài liệu đính kèm (${detailsContract.attachments?.length || 0} trang)`} key="3">
+              {detailsContract.attachments && detailsContract.attachments.length > 0 ? (
+                <Row gutter={[16, 16]} justify="center">
+                  {detailsContract.attachments.map((img, index) => (
+                    <Col span={24} key={index} style={{ textAlign: 'center' }}>
+                      <div style={{ padding: 8, border: '1px solid #f0edf6', borderRadius: 8, backgroundColor: '#faf8f5', marginBottom: 12 }}>
+                        <Text type="secondary" block style={{ marginBottom: 8, fontWeight: 500 }}>
+                          Trang {index + 1}
+                        </Text>
+                        <img 
+                          src={img} 
+                          alt={`Attachment Page ${index + 1}`} 
+                          style={{ maxWidth: '100%', maxHeight: 450, objectFit: 'contain', borderRadius: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                        />
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              ) : (
+                <div style={{ padding: 40, textAlign: 'center' }}>
+                  <Text type="secondary" italic>Không tìm thấy file ảnh bản quét hợp đồng đính kèm.</Text>
+                </div>
+              )}
+            </Tabs.TabPane>
+          </Tabs>
+        )}
+      </Drawer>
     </Card>
   );
 }

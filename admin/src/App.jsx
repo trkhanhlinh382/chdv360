@@ -13,7 +13,8 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   AreaChartOutlined,
-  UserAddOutlined
+  UserAddOutlined,
+  EnvironmentOutlined
 } from '@ant-design/icons';
 
 import AdminLogin from './pages/AdminLogin';
@@ -25,6 +26,7 @@ import ContractManagement from './pages/ContractManagement';
 import InvoiceManagement from './pages/InvoiceManagement';
 import StaffManagement from './pages/StaffManagement';
 import CheckinWizard from './pages/CheckinWizard';
+import RegionManagement from './pages/RegionManagement';
 
 import { api } from './services/api';
 
@@ -62,6 +64,11 @@ function DashboardShell() {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Bảng điều khiển'
+    },
+    {
+      key: '/regions',
+      icon: <EnvironmentOutlined />,
+      label: 'Quản lý khu vực'
     },
     {
       key: '/buildings',
@@ -182,6 +189,7 @@ function DashboardShell() {
             <Route path="invoices" element={<InvoiceManagement />} />
             <Route path="staff" element={<AdminRoute><StaffManagement /></AdminRoute>} />
             <Route path="checkin" element={<CheckinWizard />} />
+            <Route path="regions" element={<RegionManagement />} />
             <Route path="" element={<Navigate to="dashboard" replace />} />
 
           </Routes>

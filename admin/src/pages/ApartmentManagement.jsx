@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer, Dropdown } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer, Dropdown, Statistic } from 'antd';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
@@ -50,6 +50,9 @@ const compressImage = (file) => {
 
 export default function ApartmentManagement() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const paramBuildingId = searchParams.get('buildingId');
+
   const [apartments, setApartments] = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -63,7 +66,7 @@ export default function ApartmentManagement() {
   const [detailsContract, setDetailsContract] = useState(null);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterBuilding, setFilterBuilding] = useState('all');
+  const [filterBuilding, setFilterBuilding] = useState(paramBuildingId || 'all');
   const [filterStatus, setFilterStatus] = useState('all');
 
   const selectedBuildingId = Form.useWatch('buildingId', form);
@@ -101,6 +104,12 @@ export default function ApartmentManagement() {
     fetchBuildings();
     fetchApartments();
   }, []);
+
+  useEffect(() => {
+    if (paramBuildingId) {
+      setFilterBuilding(paramBuildingId);
+    }
+  }, [paramBuildingId]);
 
   const handleViewDetails = async (record) => {
     setDetailsApartment(record);
@@ -258,27 +267,6 @@ export default function ApartmentManagement() {
       }
     },
     {
-      title: 'Kiểm kê tài sản',
-      key: 'assets',
-      render: (_, record) => {
-        const total = record.assets?.length || 0;
-        const broken = record.assets?.filter(a => a.status === 'Broken').length || 0;
-        return (
-          <Tooltip title={`Có ${total} thiết bị. ${broken} thiết bị hỏng.`}>
-            <Badge 
-              count={broken > 0 ? broken : 0} 
-              color="red"
-              offset={[8, 0]}
-            >
-              <Tag color={broken > 0 ? 'red' : 'blue'} icon={<ToolOutlined />}>
-                {total} tài sản
-              </Tag>
-            </Badge>
-          </Tooltip>
-        );
-      }
-    },
-    {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => {
@@ -356,14 +344,52 @@ export default function ApartmentManagement() {
     return matchesSearch && matchesBuilding && matchesStatus;
   });
 
+  const activeApartments = apartments.filter(a => a.status !== 'Maintenance').length;
+  const maintenanceApartments = apartments.filter(a => a.status === 'Maintenance').length;
+
   return (
-    <Card 
-      title={
-        <Space>
-          <ApartmentOutlined style={{ color: '#bda46a' }} />
-          <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Căn Hộ</Title>
-        </Space>
-      }
+    <Space direction="vertical" size={24} style={{ width: '100%' }}>
+      {/* 4. Thống kê tổng quan căn hộ */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Tổng số Căn Hộ" 
+              value={apartments.length} 
+              valueStyle={{ color: '#bda46a', fontWeight: 700 }}
+              prefix={<ApartmentOutlined style={{ color: '#bda46a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Căn hộ Đang hoạt động" 
+              value={activeApartments} 
+              valueStyle={{ color: '#52c41a', fontWeight: 700 }}
+              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+            <Statistic 
+              title="Đang bảo trì (Ngưng hoạt động)" 
+              value={maintenanceApartments} 
+              valueStyle={{ color: '#f5222d', fontWeight: 700 }}
+              prefix={<CloseCircleOutlined style={{ color: '#f5222d' }} />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Card 
+        title={
+          <Space>
+            <ApartmentOutlined style={{ color: '#bda46a' }} />
+            <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Căn Hộ</Title>
+          </Space>
+        }
       extra={
         <Space>
           <Button 
@@ -887,5 +913,6 @@ export default function ApartmentManagement() {
         )}
       </Drawer>
     </Card>
+    </Space>
   );
 }

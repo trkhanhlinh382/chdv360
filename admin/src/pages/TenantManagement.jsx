@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload, Dropdown } from 'antd';
+import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload, Dropdown, Tabs, Descriptions, Drawer } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
 const compressImage = (file) => {
@@ -60,6 +60,9 @@ export default function TenantManagement() {
   const [uploadedBack, setUploadedBack] = useState(null);
   const [previewFrontModal, setPreviewFrontModal] = useState(null);
   const [previewBackModal, setPreviewBackModal] = useState(null);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [detailsTenant, setDetailsTenant] = useState(null);
+  const [detailsContract, setDetailsContract] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBuilding, setFilterBuilding] = useState('all');
@@ -93,6 +96,18 @@ export default function TenantManagement() {
       message.error(error.message || 'Không thể tải danh sách khách thuê');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewDetails = async (record) => {
+    setDetailsTenant(record);
+    setDetailsDrawerOpen(true);
+    try {
+      const contractRes = await api.getContracts();
+      const activeContract = contractRes.data.find(c => (c.tenantId?._id || c.tenantId) === record._id);
+      setDetailsContract(activeContract || null);
+    } catch (error) {
+      console.error('Không thể tải thông tin hợp đồng của khách thuê', error);
     }
   };
 
@@ -239,18 +254,7 @@ export default function TenantManagement() {
       key: 'vehicles',
       render: (_, record) => {
         const vCount = record.vehicles?.length || 0;
-        return (
-          <div>
-            <Badge count={vCount} color={vCount > 0 ? '#bda46a' : '#d9d9d9'}>
-              <Tag icon={<CarOutlined />}>{vCount} xe</Tag>
-            </Badge>
-            {record.vehicles?.map((v, i) => (
-              <div key={i} style={{ fontSize: 11, color: '#82745f', marginTop: 2 }}>
-                - {v.brand} ({v.licensePlate})
-              </div>
-            ))}
-          </div>
-        );
+        return <Tag icon={<CarOutlined />} color={vCount > 0 ? 'gold' : 'default'}>{vCount} xe</Tag>;
       }
     },
     {
@@ -258,16 +262,7 @@ export default function TenantManagement() {
       key: 'coResidents',
       render: (_, record) => {
         const count = record.coResidents?.length || 0;
-        return (
-          <div>
-            <Tag color={count > 0 ? 'cyan' : 'default'}>{count} thành viên</Tag>
-            {record.coResidents?.map((c, i) => (
-              <div key={i} style={{ fontSize: 11, color: '#82745f' }}>
-                - {c.name} ({c.relationship})
-              </div>
-            ))}
-          </div>
-        );
+        return <Tag color={count > 0 ? 'cyan' : 'default'}>{count} thành viên</Tag>;
       }
     },
     {
@@ -281,6 +276,12 @@ export default function TenantManagement() {
       key: 'action',
       render: (_, record) => {
         const items = [
+          {
+            key: 'detail',
+            label: 'Chi tiết',
+            icon: <InfoCircleOutlined style={{ color: '#9b8451' }} />,
+            onClick: () => handleViewDetails(record)
+          },
           {
             key: 'edit',
             label: 'Chỉnh sửa',
@@ -651,6 +652,151 @@ export default function TenantManagement() {
           </Row>
         </Form>
       </Modal>
+
+      {/* Immersive Tenant Details Drawer */}
+      <Drawer
+        title={<Title level={4} style={{ margin: 0, color: '#524636' }}>Hồ Sơ Khách Thuê - {detailsTenant?.name}</Title>}
+        placement="right"
+        width={800}
+        onClose={() => {
+          setDetailsDrawerOpen(false);
+          setDetailsTenant(null);
+          setDetailsContract(null);
+        }}
+        open={detailsDrawerOpen}
+        destroyOnClose
+      >
+        {detailsTenant && (
+          <Tabs defaultActiveKey="1" style={{ marginTop: -12 }}>
+            <Tabs.TabPane tab="Tổng quan & CCCD" key="1">
+              <Row gutter={[24, 24]}>
+                <Col span={14}>
+                  <Card title="Hồ Sơ Cá Nhân" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph><strong>Họ và tên:</strong> <Text strong style={{ color: '#524636' }}>{detailsTenant.name}</Text></Paragraph>
+                    <Paragraph><strong>Số điện thoại:</strong> {detailsTenant.phone}</Paragraph>
+                    <Paragraph><strong>Địa chỉ Email:</strong> {detailsTenant.email || 'Không cung cấp'}</Paragraph>
+                    <Paragraph><strong>Số CCCD / Hộ chiếu:</strong> {detailsTenant.identityCard}</Paragraph>
+                    <Paragraph><strong>Giới tính:</strong> {detailsTenant.gender}</Paragraph>
+                    <Paragraph><strong>Ngày sinh:</strong> {detailsTenant.birthDate ? new Date(detailsTenant.birthDate).toLocaleDateString('vi-VN') : 'N/A'}</Paragraph>
+                    <Paragraph><strong>Nghề nghiệp:</strong> {detailsTenant.occupation || 'N/A'}</Paragraph>
+                    <Paragraph><strong>Hộ khẩu thường trú:</strong> {detailsTenant.permanentAddress || 'N/A'}</Paragraph>
+                    <Paragraph><strong>Căn hộ gán:</strong> {detailsTenant.apartmentId?.buildingId?.name} - Phòng {detailsTenant.apartmentId?.name}</Paragraph>
+                    <Paragraph><strong>Tiền cọc thực đóng:</strong> <Text type="warning" strong>{formatCurrency(detailsTenant.depositPaid)}</Text></Paragraph>
+                  </Card>
+                </Col>
+                <Col span={10}>
+                  <Card title="Trạng Thái Vận Hành" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Paragraph>
+                      <strong>Trạng thái hồ sơ:</strong>{' '}
+                      {detailsTenant.status === 'Active' ? <Tag color="green">Đang hiệu lực</Tag> : <Tag color="red">Đã ngưng</Tag>}
+                    </Paragraph>
+                    <Paragraph><strong>Ngày đăng ký:</strong> {new Date(detailsTenant.createdAt || Date.now()).toLocaleDateString('vi-VN')}</Paragraph>
+                  </Card>
+                </Col>
+
+                <Col span={24}>
+                  <Card title="Ảnh CCCD Đính Kèm" bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                    <Row gutter={16}>
+                      {detailsTenant.identityCardFront && (
+                        <Col span={12} style={{ textAlign: 'center' }}>
+                          <Text type="secondary" block style={{ marginBottom: 8 }}>Mặt trước CCCD</Text>
+                          <img 
+                            src={detailsTenant.identityCardFront} 
+                            alt="CCCD Front" 
+                            style={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 8, border: '1px solid #f0edf6', cursor: 'zoom-in' }}
+                            onClick={() => setPreviewFrontModal(detailsTenant.identityCardFront)}
+                          />
+                        </Col>
+                      )}
+                      {detailsTenant.identityCardBack && (
+                        <Col span={12} style={{ textAlign: 'center' }}>
+                          <Text type="secondary" block style={{ marginBottom: 8 }}>Mặt sau CCCD</Text>
+                          <img 
+                            src={detailsTenant.identityCardBack} 
+                            alt="CCCD Back" 
+                            style={{ width: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 8, border: '1px solid #f0edf6', cursor: 'zoom-in' }}
+                            onClick={() => setPreviewBackModal(detailsTenant.identityCardBack)}
+                          />
+                        </Col>
+                      )}
+                      {!detailsTenant.identityCardFront && !detailsTenant.identityCardBack && (
+                        <Col span={24} style={{ textAlign: 'center', padding: 12 }}>
+                          <Text type="secondary" italic>Chưa tải lên hình ảnh định danh cá nhân.</Text>
+                        </Col>
+                      )}
+                    </Row>
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab={`Thành viên & Xe máy (${detailsTenant.coResidents?.length || 0} / ${detailsTenant.vehicles?.length || 0})`} key="2">
+              <Row gutter={[24, 24]}>
+                <Col span={12}>
+                  <Card title="Danh Sách Phương Tiện Gửi Xe" size="small">
+                    {detailsTenant.vehicles && detailsTenant.vehicles.length > 0 ? (
+                      <List
+                        dataSource={detailsTenant.vehicles}
+                        renderItem={(item, i) => (
+                          <List.Item>
+                            <List.Item.Meta
+                              avatar={<Badge count={i + 1} color="#bda46a" />}
+                              title={<Text strong>{item.brand} ({item.color})</Text>}
+                              description={`Biển số: ${item.licensePlate}`}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div style={{ padding: 24, textAlign: 'center' }}><Text type="secondary">Chưa đăng ký gửi xe.</Text></div>
+                    )}
+                  </Card>
+                </Col>
+
+                <Col span={12}>
+                  <Card title="Danh Sách Thành Viên Ở Cùng" size="small">
+                    {detailsTenant.coResidents && detailsTenant.coResidents.length > 0 ? (
+                      <List
+                        dataSource={detailsTenant.coResidents}
+                        renderItem={(item, i) => (
+                          <List.Item>
+                            <List.Item.Meta
+                              avatar={<Badge count={i + 1} color="cyan" />}
+                              title={<Text strong>{item.name}</Text>}
+                              description={`Quan hệ: ${item.relationship} | SĐT: ${item.phone || 'Không có'}`}
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div style={{ padding: 24, textAlign: 'center' }}><Text type="secondary">Ở một mình (Không có thành viên phụ).</Text></div>
+                    )}
+                  </Card>
+                </Col>
+              </Row>
+            </Tabs.TabPane>
+
+            <Tabs.TabPane tab="Hợp đồng liên kết" key="3">
+              {detailsContract ? (
+                <Card title={`Số Hợp Đồng: ${detailsContract.contractNumber}`} bordered={false} style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.02)', borderRadius: 10 }}>
+                  <Descriptions bordered column={1}>
+                    <Descriptions.Item label="Giá thuê căn hộ">{formatCurrency(detailsContract.rentalPrice)}/tháng</Descriptions.Item>
+                    <Descriptions.Item label="Đặt cọc">{formatCurrency(detailsContract.depositAmount)}</Descriptions.Item>
+                    <Descriptions.Item label="Thời hạn">Từ {new Date(detailsContract.startDate).toLocaleDateString('vi-VN')} đến {new Date(detailsContract.endDate).toLocaleDateString('vi-VN')}</Descriptions.Item>
+                    <Descriptions.Item label="Kỳ đóng tiền">{detailsContract.paymentCycle} tháng/lần</Descriptions.Item>
+                    <Descriptions.Item label="Ngày xuất hoá đơn">Ngày {detailsContract.billingDate || 5} hàng tháng</Descriptions.Item>
+                    <Descriptions.Item label="Quy định & Điều khoản">{detailsContract.terms || 'N/A'}</Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              ) : (
+                <div style={{ padding: 40, textAlign: 'center' }}>
+                  <Text type="secondary" italic>Không tìm thấy thông tin Hợp đồng hoạt động gắn với khách thuê này.</Text>
+                </div>
+              )}
+            </Tabs.TabPane>
+          </Tabs>
+        )}
+      </Drawer>
 
       {/* Front CCCD Preview Modal */}
       <Modal
