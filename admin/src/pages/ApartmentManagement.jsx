@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, Tag, Row, Col, Typography, message, Popconfirm, Divider, Badge, Tooltip, Upload, Tabs, Drawer, Dropdown } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined, InfoCircleOutlined, ToolOutlined, CheckCircleOutlined, CloseCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import { api } from '../services/api';
@@ -48,6 +49,7 @@ const compressImage = (file) => {
 };
 
 export default function ApartmentManagement() {
+  const navigate = useNavigate();
   const [apartments, setApartments] = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -286,7 +288,19 @@ export default function ApartmentManagement() {
             label: 'Chi tiết',
             icon: <InfoCircleOutlined style={{ color: '#9b8451' }} />,
             onClick: () => handleViewDetails(record)
-          },
+          }
+        ];
+
+        if (record.status === 'Vacant') {
+          items.push({
+            key: 'checkin',
+            label: 'Nhận phòng',
+            icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+            onClick: () => navigate(`/checkin?apartmentId=${record._id}`)
+          });
+        }
+
+        items.push(
           {
             key: 'edit',
             label: 'Chỉnh sửa',
@@ -310,7 +324,7 @@ export default function ApartmentManagement() {
               });
             }
           }
-        ];
+        );
 
         return (
           <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
@@ -350,7 +364,26 @@ export default function ApartmentManagement() {
           <Title level={4} style={{ margin: 0, color: '#524636' }}>Quản Lý Căn Hộ</Title>
         </Space>
       }
-      extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}>Thêm căn hộ</Button>}
+      extra={
+        <Space>
+          <Button 
+            type="primary" 
+            ghost
+            icon={<CheckCircleOutlined />} 
+            onClick={() => navigate('/checkin')}
+          >
+            Nhận phòng nhanh
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAdd} 
+            style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
+          >
+            Thêm căn hộ
+          </Button>
+        </Space>
+      }
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >
       <div style={{ marginBottom: 20, padding: 16, background: '#fafaf9', borderRadius: 10, border: '1px solid #f0edf6' }}>

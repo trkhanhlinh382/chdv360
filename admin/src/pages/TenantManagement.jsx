@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, List, Badge, Tag, InputNumber, Upload, Dropdown } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CarOutlined, PlusOutlined as AddIcon, PhoneOutlined, SolutionOutlined, InfoCircleOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
@@ -48,6 +49,7 @@ const compressImage = (file) => {
 };
 
 export default function TenantManagement() {
+  const navigate = useNavigate();
   const [tenants, setTenants] = useState([]);
   const [apartments, setApartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -336,14 +338,24 @@ export default function TenantManagement() {
         </Space>
       }
       extra={
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          onClick={handleAdd}
-          style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
-        >
-          Đăng ký khách thuê
-        </Button>
+        <Space>
+          <Button 
+            type="primary" 
+            ghost
+            icon={<PlusOutlined />} 
+            onClick={() => navigate('/checkin')}
+          >
+            Quy trình Nhận phòng
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAdd}
+            style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
+          >
+            Đăng ký khách thuê
+          </Button>
+        </Space>
       }
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >

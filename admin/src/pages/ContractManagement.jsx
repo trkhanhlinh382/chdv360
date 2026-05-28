@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Card, Space, Modal, Form, Input, InputNumber, Select, DatePicker, Row, Col, Typography, message, Popconfirm, Divider, Tag, Upload, Dropdown } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, DollarOutlined, DownOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api } from '../services/api';
@@ -48,6 +49,7 @@ const compressImage = (file) => {
 };
 
 export default function ContractManagement() {
+  const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
   const [apartments, setApartments] = useState([]);
   const [tenants, setTenants] = useState([]);
@@ -326,14 +328,24 @@ export default function ContractManagement() {
         </Space>
       }
       extra={
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          onClick={handleAdd}
-          style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
-        >
-          Lập hợp đồng thuê
-        </Button>
+        <Space>
+          <Button 
+            type="primary" 
+            ghost
+            icon={<PlusOutlined />} 
+            onClick={() => navigate('/checkin')}
+          >
+            Quy trình Nhận phòng
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={handleAdd}
+            style={{ background: 'linear-gradient(135deg, #bda46a 0%, #9b8451 100%)', border: 'none' }}
+          >
+            Lập hợp đồng thuê
+          </Button>
+        </Space>
       }
       style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}
     >

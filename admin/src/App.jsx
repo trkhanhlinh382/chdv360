@@ -12,7 +12,8 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  AreaChartOutlined
+  AreaChartOutlined,
+  UserAddOutlined
 } from '@ant-design/icons';
 
 import AdminLogin from './pages/AdminLogin';
@@ -23,6 +24,7 @@ import TenantManagement from './pages/TenantManagement';
 import ContractManagement from './pages/ContractManagement';
 import InvoiceManagement from './pages/InvoiceManagement';
 import StaffManagement from './pages/StaffManagement';
+import CheckinWizard from './pages/CheckinWizard';
 
 import { api } from './services/api';
 
@@ -80,6 +82,11 @@ function DashboardShell() {
       key: '/contracts',
       icon: <FileTextOutlined />,
       label: 'Quản lý hợp đồng'
+    },
+    {
+      key: '/checkin',
+      icon: <UserAddOutlined />,
+      label: 'Nhận phòng'
     },
     {
       key: '/invoices',
@@ -174,6 +181,7 @@ function DashboardShell() {
             <Route path="contracts" element={<ContractManagement />} />
             <Route path="invoices" element={<InvoiceManagement />} />
             <Route path="staff" element={<AdminRoute><StaffManagement /></AdminRoute>} />
+            <Route path="checkin" element={<CheckinWizard />} />
             <Route path="" element={<Navigate to="dashboard" replace />} />
 
           </Routes>
