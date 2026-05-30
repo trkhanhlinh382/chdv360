@@ -61,7 +61,12 @@ exports.getTenants = async (req, res, next) => {
       query = { apartmentId: { $in: apartmentIds } };
     }
 
+    if (req.query.apartmentId) {
+      query.apartmentId = req.query.apartmentId;
+    }
+
     const tenants = await Tenant.find(query)
+      .select('-identityCardFront -identityCardBack')
       .populate({
         path: 'apartmentId',
         select: 'name code floor price buildingId',
@@ -69,7 +74,8 @@ exports.getTenants = async (req, res, next) => {
           path: 'buildingId',
           select: 'name code address defaultFees parkingCapacity'
         }
-      });
+      })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -92,9 +98,10 @@ exports.getTenantById = async (req, res, next) => {
         select: 'name code floor price buildingId',
         populate: {
           path: 'buildingId',
-          select: 'name code address defaultFees'
+          select: 'name code address defaultFees parkingCapacity'
         }
-      });
+      })
+      .lean();
 
     if (!tenant) {
       res.status(404);

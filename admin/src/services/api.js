@@ -78,14 +78,14 @@ export const api = {
   deleteApartment: (id) => client.delete(`/apartments/${id}`),
 
   // Tenants
-  getTenants: () => client.get('/tenants'),
+  getTenants: (params) => client.get('/tenants', { params }),
   getTenantById: (id) => client.get(`/tenants/${id}`),
   createTenant: (data) => client.post('/tenants', data),
   updateTenant: (id, data) => client.put(`/tenants/${id}`, data),
   deleteTenant: (id) => client.delete(`/tenants/${id}`),
 
   // Contracts
-  getContracts: () => client.get('/contracts'),
+  getContracts: (params) => client.get('/contracts', { params }),
   getContractById: (id) => client.get(`/contracts/${id}`),
   createContract: (data) => client.post('/contracts', data),
   updateContract: (id, data) => client.put(`/contracts/${id}`, data),

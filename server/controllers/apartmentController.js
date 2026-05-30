@@ -27,7 +27,10 @@ exports.getApartments = async (req, res, next) => {
       query.buildingId = { $in: req.user.assignedBuildings };
     }
 
-    const apartments = await Apartment.find(query).populate('buildingId', 'name code address');
+    const apartments = await Apartment.find(query)
+      .select('-images -assets')
+      .populate('buildingId', 'name code address')
+      .lean();
     res.status(200).json({
       success: true,
       count: apartments.length,
@@ -43,7 +46,9 @@ exports.getApartments = async (req, res, next) => {
 // @access  Private
 exports.getApartmentById = async (req, res, next) => {
   try {
-    const apartment = await Apartment.findById(req.params.id).populate('buildingId', 'name code address defaultFees');
+    const apartment = await Apartment.findById(req.params.id)
+      .populate('buildingId', 'name code address defaultFees')
+      .lean();
 
     if (!apartment) {
       res.status(404);

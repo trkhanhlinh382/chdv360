@@ -117,13 +117,13 @@ export default function ApartmentManagement() {
 
     if (record.status === 'Occupied') {
       try {
-        const tenantRes = await api.getTenants();
-        const activeTenant = tenantRes.data.find(t => (t.apartmentId?._id || t.apartmentId) === record._id);
-        setDetailsTenant(activeTenant || null);
+        const tenantRes = await api.getTenants({ apartmentId: record._id });
+        const activeTenant = tenantRes.data && tenantRes.data.length > 0 ? tenantRes.data[0] : null;
+        setDetailsTenant(activeTenant);
 
-        const contractRes = await api.getContracts();
-        const activeContract = contractRes.data.find(c => (c.apartmentId?._id || c.apartmentId) === record._id);
-        setDetailsContract(activeContract || null);
+        const contractRes = await api.getContracts({ apartmentId: record._id });
+        const activeContract = contractRes.data && contractRes.data.length > 0 ? contractRes.data[0] : null;
+        setDetailsContract(activeContract);
       } catch (error) {
         console.error('Không thể tải thông tin hợp đồng và khách thuê', error);
       }

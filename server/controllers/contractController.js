@@ -26,6 +26,10 @@ exports.getContracts = async (req, res, next) => {
       query = { apartmentId: { $in: apartmentIds } };
     }
 
+    if (req.query.apartmentId) {
+      query.apartmentId = req.query.apartmentId;
+    }
+
     const contracts = await Contract.find(query)
       .populate('tenantId', 'name phone identityCard')
       .populate({
@@ -35,7 +39,8 @@ exports.getContracts = async (req, res, next) => {
           path: 'buildingId',
           select: 'name code address'
         }
-      });
+      })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -59,9 +64,10 @@ exports.getContractById = async (req, res, next) => {
         select: 'name code floor price buildingId',
         populate: {
           path: 'buildingId',
-          select: 'name code address'
+          select: 'name code address defaultFees'
         }
-      });
+      })
+      .lean();
 
     if (!contract) {
       res.status(404);
