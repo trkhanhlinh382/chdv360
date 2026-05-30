@@ -20,9 +20,13 @@ exports.getDashboardStats = async (req, res, next) => {
       apartmentQuery = { buildingId: { $in: req.user.assignedBuildings } };
     }
 
-    // 2. Fetch Buildings & Apartments
-    const buildings = await Building.find(buildingQuery);
-    const apartments = await Apartment.find(apartmentQuery);
+    // 2. Fetch Buildings & Apartments (Optimized with projection and lean)
+    const buildings = await Building.find(buildingQuery)
+      .select('name code parkingCapacity')
+      .lean();
+    const apartments = await Apartment.find(apartmentQuery)
+      .select('buildingId status name code')
+      .lean();
     const apartmentIds = apartments.map(apt => apt._id);
 
     const totalBuildingsCount = buildings.length;
@@ -36,8 +40,10 @@ exports.getDashboardStats = async (req, res, next) => {
       ? Math.round((occupiedCount / totalApartmentsCount) * 100)
       : 0;
 
-    // 3. Fetch Tenant Stats (Active tenants under these apartments)
-    const tenants = await Tenant.find({ apartmentId: { $in: apartmentIds }, status: 'Active' });
+    // 3. Fetch Tenant Stats (Active tenants under these apartments - Optimized with projection and lean)
+    const tenants = await Tenant.find({ apartmentId: { $in: apartmentIds }, status: 'Active' })
+      .select('apartmentId coResidents vehicles')
+      .lean();
     const totalPrimaryTenants = tenants.length;
     const totalCoResidents = tenants.reduce((sum, t) => sum + (t.coResidents ? t.coResidents.length : 0), 0);
     const totalResidents = totalPrimaryTenants + totalCoResidents;
@@ -51,10 +57,10 @@ exports.getDashboardStats = async (req, res, next) => {
     const buildingBreakdowns = [];
 
     for (const building of buildings) {
-      const bApartments = apartments.filter(apt => apt.buildingId.toString() === building._id.toString());
+      const bApartments = apartments.filter(apt => apt.buildingId && apt.buildingId.toString() === building._id.toString());
       const bApartmentIds = bApartments.map(apt => apt._id);
       
-      const bTenants = tenants.filter(t => bApartmentIds.map(id => id.toString()).includes(t.apartmentId.toString()));
+      const bTenants = tenants.filter(t => t.apartmentId && bApartmentIds.map(id => id.toString()).includes(t.apartmentId.toString()));
       const bVehiclesCount = bTenants.reduce((sum, t) => sum + (t.vehicles ? t.vehicles.length : 0), 0);
       
       const bOccupiedCount = bApartments.filter(apt => apt.status === 'Occupied').length;
@@ -90,8 +96,10 @@ exports.getDashboardStats = async (req, res, next) => {
       }
     }
 
-    // 5. Projected Monthly Revenue (Sum of rent in active contracts)
-    const contracts = await Contract.find({ apartmentId: { $in: apartmentIds }, status: 'Active' });
+    // 5. Projected Monthly Revenue (Sum of rent in active contracts - Optimized with projection and lean)
+    const contracts = await Contract.find({ apartmentId: { $in: apartmentIds }, status: 'Active' })
+      .select('apartmentId rentalPrice')
+      .lean();
     const projectedMonthlyRevenue = contracts.reduce((sum, c) => sum + (c.rentalPrice || 0), 0);
 
     // 6. Realized Cash Flow & Unpaid Debts (Based on monthly invoices)
@@ -99,7 +107,10 @@ exports.getDashboardStats = async (req, res, next) => {
     const currentDate = new Date();
     const currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
     
-    const invoices = await Invoice.find({ apartmentId: { $in: apartmentIds } });
+    // Optimized with projection and lean
+    const invoices = await Invoice.find({ apartmentId: { $in: apartmentIds } })
+      .select('apartmentId billingMonth status totalAmount')
+      .lean();
     const currentMonthInvoices = invoices.filter(inv => inv.billingMonth === currentMonthStr);
 
     const collectedRevenue = invoices
@@ -110,20 +121,22 @@ exports.getDashboardStats = async (req, res, next) => {
       .filter(inv => inv.status === 'Unpaid')
       .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
 
-    // 7. Expiring Contracts (Within next 30 days)
+    // 7. Expiring Contracts (Within next 30 days - Optimized with projection and lean)
     const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const expiringContracts = await Contract.find({
       apartmentId: { $in: apartmentIds },
       status: 'Active',
       endDate: { $gte: new Date(), $lte: thirtyDaysFromNow }
     })
+    .select('contractNumber endDate tenantId apartmentId')
     .populate('tenantId', 'name phone')
     .populate({
       path: 'apartmentId',
       select: 'name code buildingId',
       populate: { path: 'buildingId', select: 'name code' }
     })
-    .sort({ endDate: 1 });
+    .sort({ endDate: 1 })
+    .lean();
 
     res.status(200).json({
       success: true,
@@ -180,13 +193,28 @@ exports.getFinancialStats = async (req, res, next) => {
       expenseQuery = { buildingId: { $in: req.user.assignedBuildings } };
     }
 
-    const buildings = await Building.find(buildingQuery);
-    const apartments = await Apartment.find(apartmentQuery);
+    // Optimized with projection and lean
+    const buildings = await Building.find(buildingQuery)
+      .select('name code')
+      .lean();
+    const apartments = await Apartment.find(apartmentQuery)
+      .select('buildingId status price name code')
+      .lean();
     const apartmentIds = apartments.map(apt => apt._id);
 
-    // Fetch Invoices and Expenses
-    const invoices = await Invoice.find({ apartmentId: { $in: apartmentIds } }).populate('apartmentId');
-    const expenses = await Expense.find(expenseQuery).populate('buildingId');
+    // Fetch Invoices and Expenses (Optimized with projection and lean)
+    const invoices = await Invoice.find({ apartmentId: { $in: apartmentIds } })
+      .select('apartmentId status totalAmount')
+      .populate({
+        path: 'apartmentId',
+        select: 'name code buildingId'
+      })
+      .lean();
+      
+    const expenses = await Expense.find(expenseQuery)
+      .select('buildingId title amount category date description')
+      .populate('buildingId', 'name code')
+      .lean();
 
     // Overall summary metrics
     const totalCollected = invoices
@@ -209,12 +237,12 @@ exports.getFinancialStats = async (req, res, next) => {
     const buildingBreakdowns = [];
 
     for (const b of buildings) {
-      const bApartments = apartments.filter(apt => apt.buildingId.toString() === b._id.toString());
+      const bApartments = apartments.filter(apt => apt.buildingId && apt.buildingId.toString() === b._id.toString());
       const bApartmentIds = bApartments.map(apt => apt._id.toString());
 
       // Filter invoices for apartments in this building
-      const bInvoices = invoices.filter(inv => bApartmentIds.includes(inv.apartmentId?._id?.toString()));
-      const bExpenses = expenses.filter(exp => exp.buildingId?._id?.toString() === b._id.toString());
+      const bInvoices = invoices.filter(inv => inv.apartmentId && inv.apartmentId._id && bApartmentIds.includes(inv.apartmentId._id.toString()));
+      const bExpenses = expenses.filter(exp => exp.buildingId && exp.buildingId._id && exp.buildingId._id.toString() === b._id.toString());
 
       const collected = bInvoices
         .filter(inv => inv.status === 'Paid')
