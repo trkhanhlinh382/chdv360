@@ -39,17 +39,37 @@ client.interceptors.response.use(
   }
 );
 
+// Simple, lightweight cache store for HTTP GET requests
+const cacheStore = {
+  data: {},
+  get: (key) => cacheStore.data[key],
+  set: (key, val) => { cacheStore.data[key] = val; },
+  clear: () => { cacheStore.data = {}; }
+};
+
+const cachedGet = async (url, params) => {
+  const cacheKey = `${url}_${JSON.stringify(params || {})}`;
+  if (cacheStore.get(cacheKey)) {
+    return cacheStore.get(cacheKey);
+  }
+  const res = await client.get(url, params ? { params } : undefined);
+  cacheStore.set(cacheKey, res);
+  return res;
+};
+
 export const api = {
   // Auth
   login: async (phone, password) => {
     const res = await client.post('/auth/login', { phone, password });
     if (res.token) {
+      cacheStore.clear();
       localStorage.setItem(TOKEN_KEY, res.token);
       localStorage.setItem(USER_KEY, JSON.stringify(res.user));
     }
     return res;
   },
   logout: () => {
+    cacheStore.clear();
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     window.location.href = '/#/login';
@@ -58,58 +78,154 @@ export const api = {
     const userStr = localStorage.getItem(USER_KEY);
     return userStr ? JSON.parse(userStr) : null;
   },
-  getMe: () => client.get('/auth/me'),
+  getMe: () => cachedGet('/auth/me'),
 
   // Dashboard
-  getDashboardStats: () => client.get('/dashboard/stats'),
+  getDashboardStats: () => cachedGet('/dashboard/stats'),
 
   // Buildings
-  getBuildings: () => client.get('/buildings'),
-  getBuildingById: (id) => client.get(`/buildings/${id}`),
-  createBuilding: (data) => client.post('/buildings', data),
-  updateBuilding: (id, data) => client.put(`/buildings/${id}`, data),
-  deleteBuilding: (id) => client.delete(`/buildings/${id}`),
+  getBuildings: () => cachedGet('/buildings'),
+  getBuildingById: (id) => cachedGet(`/buildings/${id}`),
+  createBuilding: async (data) => {
+    const res = await client.post('/buildings', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateBuilding: async (id, data) => {
+    const res = await client.put(`/buildings/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteBuilding: async (id) => {
+    const res = await client.delete(`/buildings/${id}`);
+    cacheStore.clear();
+    return res;
+  },
 
   // Apartments
-  getApartments: (params) => client.get('/apartments', { params }),
-  getApartmentById: (id) => client.get(`/apartments/${id}`),
-  createApartment: (data) => client.post('/apartments', data),
-  updateApartment: (id, data) => client.put(`/apartments/${id}`, data),
-  deleteApartment: (id) => client.delete(`/apartments/${id}`),
+  getApartments: (params) => cachedGet('/apartments', params),
+  getApartmentById: (id) => cachedGet(`/apartments/${id}`),
+  createApartment: async (data) => {
+    const res = await client.post('/apartments', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateApartment: async (id, data) => {
+    const res = await client.put(`/apartments/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteApartment: async (id) => {
+    const res = await client.delete(`/apartments/${id}`);
+    cacheStore.clear();
+    return res;
+  },
 
   // Tenants
-  getTenants: (params) => client.get('/tenants', { params }),
-  getTenantById: (id) => client.get(`/tenants/${id}`),
-  createTenant: (data) => client.post('/tenants', data),
-  updateTenant: (id, data) => client.put(`/tenants/${id}`, data),
-  deleteTenant: (id) => client.delete(`/tenants/${id}`),
+  getTenants: (params) => cachedGet('/tenants', params),
+  getTenantById: (id) => cachedGet(`/tenants/${id}`),
+  createTenant: async (data) => {
+    const res = await client.post('/tenants', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateTenant: async (id, data) => {
+    const res = await client.put(`/tenants/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteTenant: async (id) => {
+    const res = await client.delete(`/tenants/${id}`);
+    cacheStore.clear();
+    return res;
+  },
 
   // Contracts
-  getContracts: (params) => client.get('/contracts', { params }),
-  getContractById: (id) => client.get(`/contracts/${id}`),
-  createContract: (data) => client.post('/contracts', data),
-  updateContract: (id, data) => client.put(`/contracts/${id}`, data),
-  deleteContract: (id) => client.delete(`/contracts/${id}`),
+  getContracts: (params) => cachedGet('/contracts', params),
+  getContractById: (id) => cachedGet(`/contracts/${id}`),
+  createContract: async (data) => {
+    const res = await client.post('/contracts', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateContract: async (id, data) => {
+    const res = await client.put(`/contracts/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteContract: async (id) => {
+    const res = await client.delete(`/contracts/${id}`);
+    cacheStore.clear();
+    return res;
+  },
 
   // Invoices
-  getInvoices: () => client.get('/invoices'),
-  getDueInvoices: () => client.get('/invoices/due'),
-  getInvoiceById: (id) => client.get(`/invoices/${id}`),
-  createInvoice: (data) => client.post('/invoices', data),
-  updateInvoice: (id, data) => client.put(`/invoices/${id}`, data),
-  deleteInvoice: (id) => client.delete(`/invoices/${id}`),
+  getInvoices: () => cachedGet('/invoices'),
+  getDueInvoices: () => cachedGet('/invoices/due'),
+  getInvoiceById: (id) => cachedGet(`/invoices/${id}`),
+  createInvoice: async (data) => {
+    const res = await client.post('/invoices', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateInvoice: async (id, data) => {
+    const res = await client.put(`/invoices/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteInvoice: async (id) => {
+    const res = await client.delete(`/invoices/${id}`);
+    cacheStore.clear();
+    return res;
+  },
 
   // Expenses & Financials
-  getExpenses: (params) => client.get('/expenses', { params }),
-  createExpense: (data) => client.post('/expenses', data),
-  updateExpense: (id, data) => client.put(`/expenses/${id}`, data),
-  deleteExpense: (id) => client.delete(`/expenses/${id}`),
-  getFinancials: () => client.get('/dashboard/financials'),
+  getExpenses: (params) => cachedGet('/expenses', params),
+  createExpense: async (data) => {
+    const res = await client.post('/expenses', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateExpense: async (id, data) => {
+    const res = await client.put(`/expenses/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteExpense: async (id) => {
+    const res = await client.delete(`/expenses/${id}`);
+    cacheStore.clear();
+    return res;
+  },
+  getFinancials: () => cachedGet('/dashboard/financials'),
 
   // Staff (Admin-only)
-  getStaff: () => client.get('/staff'),
-  createStaff: (data) => client.post('/staff', data),
-  updateStaff: (id, data) => client.put(`/staff/${id}`, data),
-  deleteStaff: (id) => client.delete(`/staff/${id}`)
+  getStaff: () => cachedGet('/staff'),
+  createStaff: async (data) => {
+    const res = await client.post('/staff', data);
+    cacheStore.clear();
+    return res;
+  },
+  updateStaff: async (id, data) => {
+    const res = await client.put(`/staff/${id}`, data);
+    cacheStore.clear();
+    return res;
+  },
+  deleteStaff: async (id) => {
+    const res = await client.delete(`/staff/${id}`);
+    cacheStore.clear();
+    return res;
+  },
+  
+  // Image Upload helper
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await client.post('/public/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return res;
+  }
 };
 
