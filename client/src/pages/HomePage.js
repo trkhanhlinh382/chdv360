@@ -8,6 +8,7 @@ import {
   ArrowRightOutlined
 } from '@ant-design/icons';
 import { Button, Col, Empty, Row, Space, Typography, Card } from 'antd';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ApartmentCard from '../components/ApartmentCard';
 import BuildingCard from '../components/BuildingCard';
@@ -59,6 +60,26 @@ function HomePage() {
   const apartmentsState = useApartments();
   const vacantApartments = (apartmentsState.data || []).filter((item) => isVacantApartment(item));
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+
+    const elements = document.querySelectorAll('.scroll-reveal');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      elements.forEach((el) => observer.unobserve(el));
+    };
+  }, [buildingsState.data, apartmentsState.data]);
+
   if (buildingsState.isLoading || apartmentsState.isLoading) {
     return <LoadingView tip="Đang tải dữ liệu trang chủ..." />;
   }
@@ -84,7 +105,7 @@ function HomePage() {
   return (
     <Space direction="vertical" size={32} style={{ width: '100%' }}>
       {/* Luxury Grand Hero Banner */}
-      <section className="luxury-hero full-bleed-banner">
+      <section className="luxury-hero full-bleed-banner scroll-reveal revealed">
         <div className="home-banner-overlay" style={{ padding: '60px 0' }}>
           <Row align="middle" gutter={[24, 24]}>
             <Col xs={24} md={18} lg={13} xl={11}>
@@ -110,7 +131,7 @@ function HomePage() {
       </section>
 
       {/* Exclusive Company Services Section */}
-      <section style={{ textAlign: 'center', padding: '24px 0 12px 0' }}>
+      <section className="scroll-reveal" style={{ textAlign: 'center', padding: '24px 0 12px 0' }}>
         <Title level={2} className="luxury-section-title" style={{ color: '#3a2e1e', fontWeight: 800 }}>
           Dịch Vụ & Tiện Ích Độc Quyền Cao Cấp
         </Title>
@@ -174,7 +195,7 @@ function HomePage() {
       </section>
 
       {/* Buildings List Section */}
-      <section className="hero-block">
+      <section className="hero-block scroll-reveal">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <Title level={2} style={{ marginBottom: 8, color: '#3a2e1e' }}>
             <ShopOutlined style={{ marginRight: 8, color: '#9b8451' }} /> Tòa nhà nổi bật
@@ -188,7 +209,7 @@ function HomePage() {
         </Paragraph>
       </section>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} className="scroll-reveal">
         {buildingsState.data?.slice(0, 6).map((building) => (
           <Col xs={24} sm={24} md={12} lg={8} key={building.id} className="luxury-card-hover">
             <BuildingCard building={building} />
@@ -197,7 +218,7 @@ function HomePage() {
       </Row>
 
       {/* Vacant Apartments Section */}
-      <section className="hero-block">
+      <section className="hero-block scroll-reveal">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <Title level={2} style={{ marginBottom: 8, color: '#3a2e1e' }}>
             <ApartmentOutlined style={{ marginRight: 8, color: '#9b8451' }} /> Phòng trống sẵn mới nhất
@@ -214,7 +235,7 @@ function HomePage() {
       {vacantApartments.length === 0 ? (
         <Empty description="Hiện chưa có phòng trống" />
       ) : (
-        <Row gutter={[16, 16]}>
+        <Row gutter={[16, 16]} className="scroll-reveal">
           {vacantApartments.slice(0, 6).map((apartment) => (
             <Col xs={24} sm={12} lg={8} key={`vacant-${apartment.id}`} className="luxury-card-hover">
               <ApartmentCard apartment={apartment} />
