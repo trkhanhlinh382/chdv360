@@ -90,7 +90,7 @@ function App() {
       }}
     >
       <Layout className="app-layout">
-        <Header className="app-header">
+        <Header className="app-header glass-header">
           <Link to="/">
             <img src="/logo360.png" alt="Logo CHDV 360 Plus" className="brand-logo" />
           </Link>
