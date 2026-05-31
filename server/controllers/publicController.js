@@ -116,9 +116,28 @@ exports.getDashboardSummary = async (req, res, next) => {
 // @access  Public
 exports.getBuildings = async (req, res, next) => {
   try {
-    const buildings = await Building.find({ active: true }).lean();
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    let query = { active: true };
+
+    let buildings;
+    let total = await Building.countDocuments(query);
+
+    if (page && limit) {
+      const skip = (page - 1) * limit;
+      buildings = await Building.find(query)
+        .skip(skip)
+        .limit(limit)
+        .lean();
+    } else {
+      buildings = await Building.find(query).lean();
+    }
+
     res.status(200).json({
       success: true,
+      total,
+      page: page || 1,
+      limit: limit || total,
       data: buildings.map(mapBuildingForClient)
     });
   } catch (error) {
@@ -152,21 +171,75 @@ exports.getBuildingById = async (req, res, next) => {
 // @access  Public
 exports.getApartments = async (req, res, next) => {
   try {
-    const { buildingId } = req.query;
+    const { buildingId, status, page, limit, keyword, priceRange, areaRange, sort } = req.query;
     let query = {};
 
     if (buildingId) {
       query.buildingId = buildingId;
     }
-
-    const apartments = await Apartment.find(query).populate('buildingId').lean();
     
-    // Filter out apartments in inactive buildings
-    const activeApartments = apartments.filter(apt => apt.buildingId && apt.buildingId.active);
+    if (status) {
+      query.status = status;
+    }
+
+    if (keyword) {
+      const regex = new RegExp(keyword.trim(), 'i');
+      query.$or = [
+        { name: regex },
+        { code: regex },
+        { floor: regex },
+        { type: regex }
+      ];
+    }
+
+    if (priceRange) {
+      if (priceRange === 'under-5') query.price = { $lt: 5000000 };
+      else if (priceRange === '5-8') query.price = { $gte: 5000000, $lte: 8000000 };
+      else if (priceRange === '8-12') query.price = { $gt: 8000000, $lte: 12000000 };
+      else if (priceRange === 'over-12') query.price = { $gt: 12000000 };
+    }
+
+    if (areaRange) {
+      if (areaRange === 'under-20') query.area = { $lt: 20 };
+      else if (areaRange === '20-30') query.area = { $gte: 20, $lte: 30 };
+      else if (areaRange === '30-45') query.area = { $gt: 30, $lte: 45 };
+      else if (areaRange === 'over-45') query.area = { $gt: 45 };
+    }
+
+    let sortOption = {};
+    if (sort === 'price-desc') {
+      sortOption.price = -1;
+    } else {
+      sortOption.price = 1; // Default
+    }
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    let apartments;
+    let total;
+
+    const allApartments = await Apartment.find(query)
+      .populate('buildingId')
+      .sort(sortOption)
+      .lean();
+    
+    const activeApartments = allApartments.filter(apt => apt.buildingId && apt.buildingId.active);
+    total = activeApartments.length;
+
+    if (pageNum && limitNum) {
+      const skip = (pageNum - 1) * limitNum;
+      apartments = activeApartments.slice(skip, skip + limitNum);
+    } else {
+      apartments = activeApartments;
+    }
 
     res.status(200).json({
       success: true,
-      data: activeApartments.map(mapApartmentForClient)
+      total,
+      page: pageNum || 1,
+      limit: limitNum || total,
+      data: apartments.map(mapApartmentForClient)
     });
   } catch (error) {
     next(error);

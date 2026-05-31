@@ -384,7 +384,7 @@ export async function customServerRequest(path, params = {}) {
     return cacheStore.get(cacheKey);
   }
   const res = await axios.get(`${CUSTOM_SERVER_URL}${path}`, { params });
-  const data = res.data.data;
+  const data = (res.data && res.data.total !== undefined) ? res.data : res.data?.data;
   cacheStore.set(cacheKey, data);
   return data;
 }

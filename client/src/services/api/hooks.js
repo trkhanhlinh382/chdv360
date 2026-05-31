@@ -5,12 +5,30 @@ export function useDashboardSummary() {
   return useSWR('dashboard-summary', api.getDashboardSummary);
 }
 
-export function useBuildings() {
-  return useSWR('buildings', api.getBuildings);
+export function useBuildings(params) {
+  const key = params ? ['buildings', JSON.stringify(params)] : 'buildings';
+  const { data, error, isLoading, mutate } = useSWR(key, () => api.getBuildings(params));
+  return {
+    data: data?.data || [], // Backward compatibility
+    buildings: data?.data || [],
+    total: data?.total || 0,
+    error,
+    isLoading,
+    mutate
+  };
 }
 
-export function useApartments() {
-  return useSWR('apartments', api.getApartments);
+export function useApartments(params) {
+  const key = params ? ['apartments', JSON.stringify(params)] : 'apartments';
+  const { data, error, isLoading, mutate } = useSWR(key, () => api.getApartments(params));
+  return {
+    data: data?.data || [], // Backward compatibility
+    apartments: data?.data || [],
+    total: data?.total || 0,
+    error,
+    isLoading,
+    mutate
+  };
 }
 
 export function useBuilding(id) {

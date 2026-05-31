@@ -223,9 +223,9 @@ export const api = {
       : shouldUseResidentApi()
       ? getResidentDashboardSummary()
       : mockRequest('/dashboard-summary'),
-  getBuildings: () =>
+  getBuildings: (params) =>
     shouldUseCustomServer()
-      ? customServerRequest('/buildings')
+      ? customServerRequest('/buildings', params)
       : shouldUseResidentApi()
       ? getResidentBuildingsForClient()
       : mockRequest('/buildings'),
@@ -235,9 +235,9 @@ export const api = {
       : shouldUseResidentApi()
       ? getResidentBuildingByIdForClient(id)
       : mockRequest(`/buildings/${id}`),
-  getApartments: () =>
+  getApartments: (params) =>
     shouldUseCustomServer()
-      ? customServerRequest('/apartments')
+      ? customServerRequest('/apartments', params)
       : shouldUseResidentApi()
       ? getResidentBuildingsForClient().then(async (buildings) => {
           const apartmentGroups = await Promise.all(
