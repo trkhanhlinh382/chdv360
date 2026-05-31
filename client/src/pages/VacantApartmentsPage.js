@@ -1,5 +1,5 @@
 import { ApartmentOutlined, EnvironmentOutlined } from '@ant-design/icons';
-import { Button, Card, Col, Empty, Input, Row, Select, Space, Tag, Typography } from 'antd';
+import { Button, Card, Col, Empty, Input, Row, Select, Space, Tag, Typography, Pagination } from 'antd';
 import { useMemo, useState } from 'react';
 import ApartmentCard from '../components/ApartmentCard';
 import { ErrorView, LoadingView } from '../components/StateView';
@@ -126,6 +126,8 @@ function VacantApartmentsPage() {
   const [priceRangeFilter, setPriceRangeFilter] = useState();
   const [areaRangeFilter, setAreaRangeFilter] = useState();
   const [priceSort, setPriceSort] = useState('price-asc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
 
   // applied state — results only update when user clicks "Áp dụng"
   const [applied, setApplied] = useState({
@@ -139,6 +141,7 @@ function VacantApartmentsPage() {
 
   const applyFilters = () => {
     setApplied({ keyword, areaFilter, buildingFilter, priceRangeFilter, areaRangeFilter, priceSort });
+    setCurrentPage(1);
   };
 
   const resetFilters = () => {
@@ -149,6 +152,7 @@ function VacantApartmentsPage() {
     setAreaRangeFilter(undefined);
     setPriceSort('price-asc');
     setApplied({ keyword: '', areaFilter: undefined, buildingFilter: undefined, priceRangeFilter: undefined, areaRangeFilter: undefined, priceSort: 'price-asc' });
+    setCurrentPage(1);
   };
 
   const buildingMap = useMemo(() => {
@@ -223,6 +227,13 @@ function VacantApartmentsPage() {
       return applied.priceSort === 'price-desc' ? priceB - priceA : priceA - priceB;
     });
   }, [vacantApartments, buildingMap, applied]);
+
+  const activePage = Math.min(currentPage, Math.ceil(filteredApartments.length / pageSize) || 1);
+
+  const paginatedApartments = useMemo(() => {
+    const startIndex = (activePage - 1) * pageSize;
+    return filteredApartments.slice(startIndex, startIndex + pageSize);
+  }, [filteredApartments, activePage]);
 
   if (apartmentsState.isLoading || buildingsState.isLoading) {
     return <LoadingView tip="Đang tải danh sách phòng trống..." />;
@@ -340,23 +351,36 @@ function VacantApartmentsPage() {
                 <Empty description="Không tìm thấy phòng trống phù hợp" />
               </div>
             ) : (
-              <Row gutter={[16, 16]}>
-                {filteredApartments.map((apartment) => {
-                  const building = buildingMap.get(String(apartment.buildingId));
-                  const area = extractAreaFromBuilding(building);
+              <Space direction="vertical" size={20} style={{ width: '100%' }}>
+                <Row gutter={[16, 16]}>
+                  {paginatedApartments.map((apartment) => {
+                    const building = buildingMap.get(String(apartment.buildingId));
+                    const area = extractAreaFromBuilding(building);
 
-                  return (
-                    <Col xs={24} sm={12} xl={8} key={apartment.id}>
-                      <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                        <ApartmentCard apartment={apartment} />
-                        <Text type="secondary">
-                          <EnvironmentOutlined /> {building?.name || 'Không rõ tòa nhà'} - {area}
-                        </Text>
-                      </Space>
-                    </Col>
-                  );
-                })}
-              </Row>
+                    return (
+                      <Col xs={24} sm={12} xl={8} key={apartment.id}>
+                        <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                          <ApartmentCard apartment={apartment} />
+                          <Text type="secondary">
+                            <EnvironmentOutlined /> {building?.name || 'Không rõ tòa nhà'} - {area}
+                          </Text>
+                        </Space>
+                      </Col>
+                    );
+                  })}
+                </Row>
+                {filteredApartments.length > pageSize && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                    <Pagination
+                      current={activePage}
+                      pageSize={pageSize}
+                      total={filteredApartments.length}
+                      onChange={(page) => setCurrentPage(page)}
+                      showSizeChanger={false}
+                    />
+                  </div>
+                )}
+              </Space>
             )}
           </Space>
         </Col>

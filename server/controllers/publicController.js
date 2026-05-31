@@ -79,8 +79,8 @@ const mapApartmentForClient = (a) => {
 // @access  Public
 exports.getDashboardSummary = async (req, res, next) => {
   try {
-    const buildings = await Building.find({ active: true });
-    const apartments = await Apartment.find();
+    const buildings = await Building.find({ active: true }).select('_id').lean();
+    const apartments = await Apartment.find().select('status maxTenants').lean();
 
     const totalBuildings = buildings.length;
     const totalApartments = apartments.length;
@@ -116,7 +116,7 @@ exports.getDashboardSummary = async (req, res, next) => {
 // @access  Public
 exports.getBuildings = async (req, res, next) => {
   try {
-    const buildings = await Building.find({ active: true });
+    const buildings = await Building.find({ active: true }).lean();
     res.status(200).json({
       success: true,
       data: buildings.map(mapBuildingForClient)
@@ -131,7 +131,7 @@ exports.getBuildings = async (req, res, next) => {
 // @access  Public
 exports.getBuildingById = async (req, res, next) => {
   try {
-    const building = await Building.findById(req.params.id);
+    const building = await Building.findById(req.params.id).lean();
 
     if (!building || !building.active) {
       res.status(404);
@@ -159,7 +159,7 @@ exports.getApartments = async (req, res, next) => {
       query.buildingId = buildingId;
     }
 
-    const apartments = await Apartment.find(query).populate('buildingId');
+    const apartments = await Apartment.find(query).populate('buildingId').lean();
     
     // Filter out apartments in inactive buildings
     const activeApartments = apartments.filter(apt => apt.buildingId && apt.buildingId.active);
@@ -178,7 +178,7 @@ exports.getApartments = async (req, res, next) => {
 // @access  Public
 exports.getApartmentById = async (req, res, next) => {
   try {
-    const apartment = await Apartment.findById(req.params.id).populate('buildingId');
+    const apartment = await Apartment.findById(req.params.id).populate('buildingId').lean();
 
     if (!apartment || !apartment.buildingId || !apartment.buildingId.active) {
       res.status(404);
@@ -199,13 +199,13 @@ exports.getApartmentById = async (req, res, next) => {
 // @access  Public
 exports.getApartmentsByBuilding = async (req, res, next) => {
   try {
-    const building = await Building.findById(req.params.buildingId);
+    const building = await Building.findById(req.params.buildingId).lean();
     if (!building || !building.active) {
       res.status(404);
       throw new Error('Building not found.');
     }
 
-    const apartments = await Apartment.find({ buildingId: req.params.buildingId }).populate('buildingId');
+    const apartments = await Apartment.find({ buildingId: req.params.buildingId }).populate('buildingId').lean();
     res.status(200).json({
       success: true,
       data: apartments.map(mapApartmentForClient)

@@ -370,9 +370,23 @@ export function shouldUseCustomServer() {
 
 const CUSTOM_SERVER_URL = process.env.REACT_APP_CUSTOM_SERVER_URL || 'https://chdv360-server.vercel.app/api/public';
 
+// Simple, lightweight cache store for HTTP GET requests
+const cacheStore = {
+  data: {},
+  get: (key) => cacheStore.data[key],
+  set: (key, val) => { cacheStore.data[key] = val; },
+  clear: () => { cacheStore.data = {}; }
+};
+
 export async function customServerRequest(path, params = {}) {
+  const cacheKey = `${path}_${JSON.stringify(params || {})}`;
+  if (cacheStore.get(cacheKey)) {
+    return cacheStore.get(cacheKey);
+  }
   const res = await axios.get(`${CUSTOM_SERVER_URL}${path}`, { params });
-  return res.data.data;
+  const data = res.data.data;
+  cacheStore.set(cacheKey, data);
+  return data;
 }
 
 const sleep = (ms) => new Promise((resolve) => {
