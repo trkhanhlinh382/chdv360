@@ -7,47 +7,9 @@ import { useApartments, useBuildings } from '../services/api/hooks';
 
 const { Paragraph, Text, Title } = Typography;
 
-function normalizeText(value) {
-  return (value || '')
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
 function extractAreaFromBuilding(building) {
   const region = (building?.region || '').trim();
-  return region || 'Khac';
-}
-
-function isVacantApartment(apartment) {
-  if (!apartment?.status) {
-    return true;
-  }
-
-  const status = apartment.status;
-
-  if (typeof status === 'string') {
-    const normalized = normalizeText(status);
-    return (
-      normalized.includes('trong') ||
-      normalized.includes('vacant') ||
-      normalized.includes('available')
-    );
-  }
-
-  const statusId = String(status.id || '');
-  if (statusId === '1') {
-    return true;
-  }
-
-  const statusLabel = normalizeText(status.title || status.name || status.code);
-  return (
-    statusLabel.includes('trong') ||
-    statusLabel.includes('vacant') ||
-    statusLabel.includes('available')
-  );
+  return region || 'Khác';
 }
 
 const PRICE_RANGE_OPTIONS = [
@@ -69,57 +31,7 @@ const PRICE_SORT_OPTIONS = [
   { label: 'Giá cao đến thấp', value: 'price-desc' }
 ];
 
-function isPriceInRange(price, range) {
-  if (!range) {
-    return true;
-  }
-
-  if (range === 'under-5') {
-    return price < 5000000;
-  }
-
-  if (range === '5-8') {
-    return price >= 5000000 && price <= 8000000;
-  }
-
-  if (range === '8-12') {
-    return price > 8000000 && price <= 12000000;
-  }
-
-  if (range === 'over-12') {
-    return price > 12000000;
-  }
-
-  return true;
-}
-
-function isAreaInRange(area, range) {
-  if (!range) {
-    return true;
-  }
-
-  if (range === 'under-20') {
-    return area < 20;
-  }
-
-  if (range === '20-30') {
-    return area >= 20 && area <= 30;
-  }
-
-  if (range === '30-45') {
-    return area > 30 && area <= 45;
-  }
-
-  if (range === 'over-45') {
-    return area > 45;
-  }
-
-  return true;
-}
-
 function VacantApartmentsPage() {
-  const apartmentsState = useApartments();
-  const buildingsState = useBuildings();
   const [keyword, setKeyword] = useState('');
   const [areaFilter, setAreaFilter] = useState();
   const [buildingFilter, setBuildingFilter] = useState();
@@ -138,6 +50,19 @@ function VacantApartmentsPage() {
     areaRangeFilter: undefined,
     priceSort: 'price-asc'
   });
+
+  const apartmentsState = useApartments({
+    page: currentPage,
+    limit: pageSize,
+    status: 'Vacant',
+    keyword: applied.keyword,
+    buildingId: applied.buildingFilter,
+    priceRange: applied.priceRangeFilter,
+    areaRange: applied.areaRangeFilter,
+    sort: applied.priceSort,
+    area: applied.areaFilter
+  });
+  const buildingsState = useBuildings();
 
   const applyFilters = () => {
     setApplied({ keyword, areaFilter, buildingFilter, priceRangeFilter, areaRangeFilter, priceSort });
@@ -159,81 +84,28 @@ function VacantApartmentsPage() {
     return new Map((buildingsState.data || []).map((item) => [String(item.id), item]));
   }, [buildingsState.data]);
 
-  const vacantApartments = useMemo(() => {
-    return (apartmentsState.data || []).filter((item) => isVacantApartment(item));
-  }, [apartmentsState.data]);
-
   const areaOptions = useMemo(() => {
-    const areas = vacantApartments
-      .map((item) => extractAreaFromBuilding(buildingMap.get(String(item.buildingId))))
+    const areas = (buildingsState.data || [])
+      .map((b) => b.region)
       .filter(Boolean);
 
     return [...new Set(areas)].sort().map((item) => ({
       label: item,
       value: item
     }));
-  }, [vacantApartments, buildingMap]);
+  }, [buildingsState.data]);
 
   const buildingOptions = useMemo(() => {
-    const buildingIds = [...new Set(vacantApartments.map((item) => String(item.buildingId)))];
-
-    return buildingIds
-      .map((id) => {
-        const building = buildingMap.get(id);
-        if (!building) {
-          return null;
-        }
-
-        return {
-          label: building.name,
-          value: id
-        };
-      })
-      .filter(Boolean)
+    return (buildingsState.data || [])
+      .map((b) => ({
+        label: b.name,
+        value: String(b.id)
+      }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [vacantApartments, buildingMap]);
+  }, [buildingsState.data]);
 
-  const filteredApartments = useMemo(() => {
-    const normalizedKeyword = normalizeText(applied.keyword);
-
-    const filtered = vacantApartments.filter((item) => {
-      const building = buildingMap.get(String(item.buildingId));
-      const area = extractAreaFromBuilding(building);
-      const price = item.price?.base || 0;
-      const roomArea = item.area || 0;
-
-      const isAreaMatch = applied.areaFilter ? area === applied.areaFilter : true;
-      const isBuildingMatch = applied.buildingFilter ? String(item.buildingId) === applied.buildingFilter : true;
-      const isPriceMatch = isPriceInRange(price, applied.priceRangeFilter);
-      const isRoomAreaMatch = isAreaInRange(roomArea, applied.areaRangeFilter);
-      const isKeywordMatch = normalizedKeyword
-        ? normalizeText(`${item.title} ${building?.name || ''} ${building?.address || ''}`).includes(
-            normalizedKeyword
-          )
-        : true;
-
-      return (
-        isAreaMatch &&
-        isBuildingMatch &&
-        isPriceMatch &&
-        isRoomAreaMatch &&
-        isKeywordMatch
-      );
-    });
-
-    return filtered.sort((a, b) => {
-      const priceA = a.price?.base || 0;
-      const priceB = b.price?.base || 0;
-      return applied.priceSort === 'price-desc' ? priceB - priceA : priceA - priceB;
-    });
-  }, [vacantApartments, buildingMap, applied]);
-
-  const activePage = Math.min(currentPage, Math.ceil(filteredApartments.length / pageSize) || 1);
-
-  const paginatedApartments = useMemo(() => {
-    const startIndex = (activePage - 1) * pageSize;
-    return filteredApartments.slice(startIndex, startIndex + pageSize);
-  }, [filteredApartments, activePage]);
+  const apartments = apartmentsState.data || [];
+  const total = apartmentsState.total || 0;
 
   if (apartmentsState.isLoading || buildingsState.isLoading) {
     return <LoadingView tip="Đang tải danh sách phòng trống..." />;
@@ -343,17 +215,17 @@ function VacantApartmentsPage() {
         <Col xs={24} lg={16} xl={17}>
           <Space direction="vertical" size={14} style={{ width: '100%' }}>
             <Tag color="gold" style={{ width: 'fit-content', padding: '6px 12px' }}>
-              {filteredApartments.length} kết quả
+              {total} kết quả
             </Tag>
 
-            {filteredApartments.length === 0 ? (
+            {apartments.length === 0 ? (
               <div className="center-box">
                 <Empty description="Không tìm thấy phòng trống phù hợp" />
               </div>
             ) : (
               <Space direction="vertical" size={20} style={{ width: '100%' }}>
                 <Row gutter={[16, 16]}>
-                  {paginatedApartments.map((apartment) => {
+                  {apartments.map((apartment) => {
                     const building = buildingMap.get(String(apartment.buildingId));
                     const area = extractAreaFromBuilding(building);
 
@@ -369,12 +241,12 @@ function VacantApartmentsPage() {
                     );
                   })}
                 </Row>
-                {filteredApartments.length > pageSize && (
+                {total > pageSize && (
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
                     <Pagination
-                      current={activePage}
+                      current={currentPage}
                       pageSize={pageSize}
-                      total={filteredApartments.length}
+                      total={total}
                       onChange={(page) => setCurrentPage(page)}
                       showSizeChanger={false}
                     />

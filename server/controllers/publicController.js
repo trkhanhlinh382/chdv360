@@ -120,18 +120,17 @@ exports.getBuildings = async (req, res, next) => {
     const limit = parseInt(req.query.limit);
     let query = { active: true };
 
-    let buildings;
     let total = await Building.countDocuments(query);
+    let buildingsQuery = Building.find(query);
 
     if (page && limit) {
       const skip = (page - 1) * limit;
-      buildings = await Building.find(query)
-        .skip(skip)
-        .limit(limit)
-        .lean();
-    } else {
-      buildings = await Building.find(query).lean();
+      buildingsQuery = buildingsQuery.skip(skip).limit(limit);
+    } else if (limit) {
+      buildingsQuery = buildingsQuery.limit(limit);
     }
+
+    const buildings = await buildingsQuery.lean();
 
     res.status(200).json({
       success: true,
@@ -171,24 +170,64 @@ exports.getBuildingById = async (req, res, next) => {
 // @access  Public
 exports.getApartments = async (req, res, next) => {
   try {
-    const { buildingId, status, page, limit, keyword, priceRange, areaRange, sort } = req.query;
+    const { buildingId, status, page, limit, keyword, priceRange, areaRange, sort, area } = req.query;
     let query = {};
 
+    // 1. Get all active building IDs
+    const activeBuildings = await Building.find({ active: true }).select('_id').lean();
+    const activeBuildingIds = activeBuildings.map(b => b._id);
+
+    // 2. Set buildingId filter and verify active status
     if (buildingId) {
-      query.buildingId = buildingId;
+      if (activeBuildingIds.some(id => String(id) === String(buildingId))) {
+        query.buildingId = buildingId;
+      } else {
+        query.buildingId = null; // Inactive or invalid building matches nothing
+      }
+    } else {
+      query.buildingId = { $in: activeBuildingIds };
+    }
+
+    // 3. Set area (region) filter on MongoDB level
+    if (area) {
+      const buildingsInRegion = await Building.find({ region: area, active: true }).select('_id').lean();
+      const regionBuildingIds = buildingsInRegion.map(b => b._id);
+      
+      if (query.buildingId && query.buildingId !== null) {
+        // If a specific building filter is set, ensure it belongs to the selected region
+        const specificBuildingId = String(query.buildingId?.$in ? '' : query.buildingId);
+        const isMatched = regionBuildingIds.some(id => String(id) === specificBuildingId);
+        if (!isMatched) {
+          query.buildingId = null;
+        }
+      } else {
+        query.buildingId = { $in: regionBuildingIds };
+      }
     }
     
     if (status) {
       query.status = status;
     }
 
+    // 4. Advanced keyword matching building names and addresses directly
     if (keyword) {
       const regex = new RegExp(keyword.trim(), 'i');
+      const matchingBuildings = await Building.find({
+        $or: [
+          { name: regex },
+          { address: regex }
+        ],
+        active: true
+      }).select('_id').lean();
+      
+      const matchingBuildingIds = matchingBuildings.map(b => b._id);
+      
       query.$or = [
         { name: regex },
         { code: regex },
         { floor: regex },
-        { type: regex }
+        { type: regex },
+        { buildingId: { $in: matchingBuildingIds } }
       ];
     }
 
@@ -216,23 +255,22 @@ exports.getApartments = async (req, res, next) => {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
 
-    let apartments;
-    let total;
-
-    const allApartments = await Apartment.find(query)
+    // 5. Query counts and paginated results directly in DB with allowDiskUse
+    const total = await Apartment.countDocuments(query);
+    
+    let apartmentsQuery = Apartment.find(query)
       .populate('buildingId')
       .sort(sortOption)
-      .lean();
-    
-    const activeApartments = allApartments.filter(apt => apt.buildingId && apt.buildingId.active);
-    total = activeApartments.length;
+      .allowDiskUse();
 
     if (pageNum && limitNum) {
       const skip = (pageNum - 1) * limitNum;
-      apartments = activeApartments.slice(skip, skip + limitNum);
-    } else {
-      apartments = activeApartments;
+      apartmentsQuery = apartmentsQuery.skip(skip).limit(limitNum);
+    } else if (limitNum) {
+      apartmentsQuery = apartmentsQuery.limit(limitNum);
     }
+
+    const apartments = await apartmentsQuery.lean();
 
     res.status(200).json({
       success: true,

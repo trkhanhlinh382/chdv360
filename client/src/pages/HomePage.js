@@ -17,48 +17,10 @@ import { useApartments, useBuildings } from '../services/api/hooks';
 
 const { Paragraph, Title } = Typography;
 
-function normalizeText(value) {
-  return (value || '')
-    .toString()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
-function isVacantApartment(apartment) {
-  if (!apartment?.status) {
-    return true;
-  }
-
-  const status = apartment.status;
-
-  if (typeof status === 'string') {
-    const normalized = normalizeText(status);
-    return (
-      normalized.includes('trong') ||
-      normalized.includes('vacant') ||
-      normalized.includes('available')
-    );
-  }
-
-  const statusId = String(status.id || '');
-  if (statusId === '1') {
-    return true;
-  }
-
-  const statusLabel = normalizeText(status.title || status.name || status.code);
-  return (
-    statusLabel.includes('trong') ||
-    statusLabel.includes('vacant') ||
-    statusLabel.includes('available')
-  );
-}
-
 function HomePage() {
-  const buildingsState = useBuildings();
-  const apartmentsState = useApartments();
-  const vacantApartments = (apartmentsState.data || []).filter((item) => isVacantApartment(item));
+  const buildingsState = useBuildings({ limit: 6 });
+  const apartmentsState = useApartments({ limit: 6, status: 'Vacant' });
+  const vacantApartments = apartmentsState.data || [];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -205,12 +167,12 @@ function HomePage() {
           </Link>
         </div>
         <Paragraph style={{ marginBottom: 0, color: '#82745f' }}>
-          Tổng cộng {buildingsState.data?.length || 0} tòa nhà đang mở cho thuê với hiệu suất cao.
+          Tổng cộng {buildingsState.total || 0} tòa nhà đang mở cho thuê với hiệu suất cao.
         </Paragraph>
       </section>
 
       <Row gutter={[16, 16]} className="scroll-reveal">
-        {buildingsState.data?.slice(0, 6).map((building) => (
+        {buildingsState.data?.map((building) => (
           <Col xs={24} sm={24} md={12} lg={8} key={building.id} className="luxury-card-hover">
             <BuildingCard building={building} />
           </Col>
@@ -228,7 +190,7 @@ function HomePage() {
           </Link>
         </div>
         <Paragraph style={{ marginBottom: 0, color: '#82745f' }}>
-          Hiện có {vacantApartments.length} phòng trống sẵn sàng dọn vào ở ngay, giá cả công khai minh bạch.
+          Hiện có {apartmentsState.total || 0} phòng trống sẵn sàng dọn vào ở ngay, giá cả công khai minh bạch.
         </Paragraph>
       </section>
 
@@ -236,7 +198,7 @@ function HomePage() {
         <Empty description="Hiện chưa có phòng trống" />
       ) : (
         <Row gutter={[16, 16]} className="scroll-reveal">
-          {vacantApartments.slice(0, 6).map((apartment) => (
+          {vacantApartments.map((apartment) => (
             <Col xs={24} sm={12} lg={8} key={`vacant-${apartment.id}`} className="luxury-card-hover">
               <ApartmentCard apartment={apartment} />
             </Col>
