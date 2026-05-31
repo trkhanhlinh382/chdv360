@@ -14,7 +14,7 @@ import BuildingCard from '../components/BuildingCard';
 import { ErrorView, LoadingView } from '../components/StateView';
 import { useApartments, useBuildings } from '../services/api/hooks';
 
-const { Paragraph, Title, Text } = Typography;
+const { Paragraph, Title } = Typography;
 
 function normalizeText(value) {
   return (value || '')
